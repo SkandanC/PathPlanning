@@ -7,6 +7,7 @@ source: M.P.Strub, J.D.Gammel. "Advanced BIT* (ABIT*):
         Sampling-Based Planning with Advanced Graph-Search Techniques" 
 """
 
+
 import numpy as np
 import matplotlib.pyplot as plt
 import time
@@ -16,7 +17,10 @@ import copy
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Sampling_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Sampling_based_Planning/"
+)
+
 from rrt_3D.env3D import env
 from rrt_3D.utils3D import getDist, sampleFree, nearest, steer, isCollide
 from rrt_3D.plot_util3D import make_get_proj, draw_block_list, draw_Spheres, draw_obb, draw_line, make_transparent
@@ -67,20 +71,23 @@ class ABIT_star:
                         Q.update(self.expand({xc}, T, Xunconnected, self.r(q)))
                         Vclosed.add(xc)
                 elif eps_trunc * (self.g_T(xp) + self.c_hat(xi, xj) + self.h_hat(xc)) <= self.g_T(self.xgoal):
-                    if self.g_T(xp) + self.c_hat(xp, xc) < self.g_T(xc):
-                        if self.g_T(xp) + self.c(xp, xc) + self.h_hat(xc) < self.g_T(self.xgoal):
-                            if self.g_T(xp) + self.c(xp, xc) < self.g_T(xc):
-                                if xc in V:
-                                    E = E.difference({(xprev, xc)})
-                                else:
-                                    Xunconnected.difference_update({xc})
-                                    V.add(xc)
-                                    E.add((xp, xc))
-                                if xc in Vclosed:
-                                    Vinconsistent.add(xc)
-                                else:
-                                    Q.update(self.expand({xc}, T, Xunconnected, self.r(q)))
-                                    Vclosed.add(xc)
+                    if (
+                        self.g_T(xp) + self.c_hat(xp, xc) < self.g_T(xc)
+                        and self.g_T(xp) + self.c(xp, xc) + self.h_hat(xc)
+                        < self.g_T(self.xgoal)
+                        and self.g_T(xp) + self.c(xp, xc) < self.g_T(xc)
+                    ):
+                        if xc in V:
+                            E = E.difference({(xprev, xc)})
+                        else:
+                            Xunconnected.difference_update({xc})
+                            V.add(xc)
+                            E.add((xp, xc))
+                        if xc in Vclosed:
+                            Vinconsistent.add(xc)
+                        else:
+                            Q.update(self.expand({xc}, T, Xunconnected, self.r(q)))
+                            Vclosed.add(xc)
                 else: 
                     self.mark_search_finished()
             ind += 1
@@ -97,9 +104,14 @@ class ABIT_star:
         for xp in set_xi:
             Eout.update({(x1, x2) for (x1, x2) in E if x1 == xp})
             for xc in {x for x in Xunconnected.union(V) if getDist(xp, x) <= r}:
-                if self.g_hat(xp) + self.c_hat(xp, xc) + self.h_hat(xc) <= self.g_T(self.xgoal):
-                    if self.g_hat(xp) + self.c_hat(xp, xc) <= self.g_hat(xc):
-                        Eout.add((xp,xc))
+                if self.g_hat(xp) + self.c_hat(xp, xc) + self.h_hat(
+                    xc
+                ) <= self.g_T(self.xgoal) and self.g_hat(xp) + self.c_hat(
+                    xp, xc
+                ) <= self.g_hat(
+                    xc
+                ):
+                    Eout.add((xp,xc))
         return Eout
 
     def prune(self, T, Xunconnected, xgoal):

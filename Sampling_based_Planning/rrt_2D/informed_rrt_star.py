@@ -93,14 +93,10 @@ class IRrtStar:
                     if c_new < c_near:
                         x_near.parent = x_new
 
-                if self.InGoalRegion(x_new):
-                    if not self.utils.is_collision(x_new, self.x_goal):
-                        self.X_soln.add(x_new)
-                        # new_cost = self.Cost(x_new) + self.Line(x_new, self.x_goal)
-                        # if new_cost < c_best:
-                        #     c_best = new_cost
-                        #     x_best = x_new
-
+                if self.InGoalRegion(x_new) and not self.utils.is_collision(
+                    x_new, self.x_goal
+                ):
+                    self.X_soln.add(x_new)
             if k % 20 == 0:
                 self.animation(x_center=x_center, c_best=c_best, dist=dist, theta=theta)
 
@@ -124,10 +120,12 @@ class IRrtStar:
         r = 50 * math.sqrt((math.log(n) / n))
 
         dist_table = [(nd.x - node.x) ** 2 + (nd.y - node.y) ** 2 for nd in nodelist]
-        X_near = [nodelist[ind] for ind in range(len(dist_table)) if dist_table[ind] <= r ** 2 and
-                  not self.utils.is_collision(nodelist[ind], node)]
-
-        return X_near
+        return [
+            nodelist[ind]
+            for ind in range(len(dist_table))
+            if dist_table[ind] <= r**2
+            and not self.utils.is_collision(nodelist[ind], node)
+        ]
 
     def Sample(self, c_max, c_min, x_center, C):
         if c_max < np.inf:
@@ -176,10 +174,7 @@ class IRrtStar:
         return path
 
     def InGoalRegion(self, node):
-        if self.Line(node, self.x_goal) < self.step_len:
-            return True
-
-        return False
+        return self.Line(node, self.x_goal) < self.step_len
 
     @staticmethod
     def RotationToWorldFrame(x_start, x_goal, L):
@@ -188,9 +183,7 @@ class IRrtStar:
         e1 = np.array([[1.0], [0.0], [0.0]])
         M = a1 @ e1.T
         U, _, V_T = np.linalg.svd(M, True, True)
-        C = U @ np.diag([1.0, 1.0, np.linalg.det(U) * np.linalg.det(V_T.T)]) @ V_T
-
-        return C
+        return U @ np.diag([1.0, 1.0, np.linalg.det(U) * np.linalg.det(V_T.T)]) @ V_T
 
     @staticmethod
     def Nearest(nodelist, n):
@@ -223,7 +216,7 @@ class IRrtStar:
 
     def animation(self, x_center=None, c_best=None, dist=None, theta=None):
         plt.cla()
-        self.plot_grid("Informed rrt*, N = " + str(self.iter_max))
+        self.plot_grid(f"Informed rrt*, N = {str(self.iter_max)}")
         plt.gcf().canvas.mpl_connect(
             'key_release_event',
             lambda event: [exit(0) if event.key == 'escape' else None])

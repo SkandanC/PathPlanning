@@ -7,7 +7,10 @@ import os
 import sys
 from collections import defaultdict
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Search_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Search_based_Planning/"
+)
+
 from Search_3D.env3D import env
 from Search_3D.utils3D import getDist, heuristic_fun, getNearest, isinbound, isinobb, \
     cost, children, StateSpace
@@ -20,14 +23,14 @@ class Anytime_Dstar(object):
 
     def __init__(self, resolution=1):
         self.Alldirec = {(1, 0, 0): 1, (0, 1, 0): 1, (0, 0, 1): 1, \
-                         (-1, 0, 0): 1, (0, -1, 0): 1, (0, 0, -1): 1, \
-                         (1, 1, 0): np.sqrt(2), (1, 0, 1): np.sqrt(2), (0, 1, 1): np.sqrt(2), \
-                         (-1, -1, 0): np.sqrt(2), (-1, 0, -1): np.sqrt(2), (0, -1, -1): np.sqrt(2), \
-                         (1, -1, 0): np.sqrt(2), (-1, 1, 0): np.sqrt(2), (1, 0, -1): np.sqrt(2), \
-                         (-1, 0, 1): np.sqrt(2), (0, 1, -1): np.sqrt(2), (0, -1, 1): np.sqrt(2), \
-                         (1, 1, 1): np.sqrt(3), (-1, -1, -1): np.sqrt(3), \
-                         (1, -1, -1): np.sqrt(3), (-1, 1, -1): np.sqrt(3), (-1, -1, 1): np.sqrt(3), \
-                         (1, 1, -1): np.sqrt(3), (1, -1, 1): np.sqrt(3), (-1, 1, 1): np.sqrt(3)}
+                             (-1, 0, 0): 1, (0, -1, 0): 1, (0, 0, -1): 1, \
+                             (1, 1, 0): np.sqrt(2), (1, 0, 1): np.sqrt(2), (0, 1, 1): np.sqrt(2), \
+                             (-1, -1, 0): np.sqrt(2), (-1, 0, -1): np.sqrt(2), (0, -1, -1): np.sqrt(2), \
+                             (1, -1, 0): np.sqrt(2), (-1, 1, 0): np.sqrt(2), (1, 0, -1): np.sqrt(2), \
+                             (-1, 0, 1): np.sqrt(2), (0, 1, -1): np.sqrt(2), (0, -1, 1): np.sqrt(2), \
+                             (1, 1, 1): np.sqrt(3), (-1, -1, -1): np.sqrt(3), \
+                             (1, -1, -1): np.sqrt(3), (-1, 1, -1): np.sqrt(3), (-1, -1, 1): np.sqrt(3), \
+                             (1, 1, -1): np.sqrt(3), (1, -1, 1): np.sqrt(3), (-1, 1, 1): np.sqrt(3)}
         self.env = env(resolution=resolution)
         self.settings = 'CollisionChecking'  # for collision checking
         self.x0, self.xt = tuple(self.env.start), tuple(self.env.goal)
@@ -137,7 +140,11 @@ class Anytime_Dstar(object):
             # TODO if s is not visited before
             self.g[s] = np.inf
         if s != self.xt:
-            self.rhs[s] = min([self.getcost(s, s_p) + self.getg(s_p) for s_p in self.getchildren(s)])
+            self.rhs[s] = min(
+                self.getcost(s, s_p) + self.getg(s_p)
+                for s_p in self.getchildren(s)
+            )
+
         self.OPEN.check_remove(s)
         if self.getg(s) != self.getrhs(s):
             if s not in self.CLOSED:
@@ -156,13 +163,11 @@ class Anytime_Dstar(object):
                 self.g[s] = self.rhs[s]
                 self.CLOSED.add(s)
                 self.V.add(s)
-                for s_p in self.getchildren(s):
-                    self.UpdateState(s_p)
             else:
                 self.g[s] = np.inf
                 self.UpdateState(s)
-                for s_p in self.getchildren(s):
-                    self.UpdateState(s_p)
+            for s_p in self.getchildren(s):
+                self.UpdateState(s_p)
             self.ind += 1
 
     def Main(self):
@@ -183,13 +188,11 @@ class Anytime_Dstar(object):
             # new2,old2 = self.env.move_block(theta = [0,0,0.1*t], mode='rotation')
             # new2, old2 = self.env.move_block(a=[0, 0, -0.2], mode='translation')
             new2, old2 = self.env.move_OBB(theta=[10*t, 0, 0], translation=[0, 0.1*t, 0])
-            mmode = 'obb' # obb or aabb
-            ischanged = True
             # islargelychanged = True
             self.Path = []
 
-            # update Cost with changed environment
-            if ischanged:
+            if ischanged := True:
+                mmode = 'obb' # obb or aabb
                 # CHANGED = self.updatecost(True, new2, old2, mode='obb')
                 CHANGED = self.updatecost(True, new2, old2, mode=mmode)
                 for u in CHANGED:

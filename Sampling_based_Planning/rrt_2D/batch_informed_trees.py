@@ -62,7 +62,7 @@ class BITStar:
 
         self.Tree = Tree(self.x_start, self.x_goal)
         self.X_sample = set()
-        self.g_T = dict()
+        self.g_T = {}
 
     def init(self):
         self.Tree.V.add(self.x_start)
@@ -83,11 +83,7 @@ class BITStar:
 
         for k in range(500):
             if not self.Tree.QE and not self.Tree.QV:
-                if k == 0:
-                    m = 350
-                else:
-                    m = 200
-
+                m = 350 if k == 0 else 200
                 if self.x_goal.parent is not None:
                     path_x, path_y = self.ExtractPath()
                     plt.plot(path_x, path_y, linewidth=2, color='r')
@@ -95,9 +91,9 @@ class BITStar:
 
                 self.Prune(self.g_T[self.x_goal])
                 self.X_sample.update(self.Sample(m, self.g_T[self.x_goal], cMin, xCenter, C))
-                self.Tree.V_old = {v for v in self.Tree.V}
-                self.Tree.QV = {v for v in self.Tree.V}
-                # self.Tree.r = self.radius(len(self.Tree.V) + len(self.X_sample))
+                self.Tree.V_old = set(self.Tree.V)
+                self.Tree.QV = set(self.Tree.V)
+                        # self.Tree.r = self.radius(len(self.Tree.V) + len(self.X_sample))
 
             while self.BestVertexQueueValue() <= self.BestEdgeQueueValue():
                 self.ExpandVertex(self.BestInVertexQueue())
@@ -107,33 +103,34 @@ class BITStar:
 
             if self.g_T[vm] + self.calc_dist(vm, xm) + self.h_estimated(xm) < self.g_T[self.x_goal]:
                 actual_cost = self.cost(vm, xm)
-                if self.g_estimated(vm) + actual_cost + self.h_estimated(xm) < self.g_T[self.x_goal]:
-                    if self.g_T[vm] + actual_cost < self.g_T[xm]:
-                        if xm in self.Tree.V:
+                if (
+                    self.g_estimated(vm) + actual_cost + self.h_estimated(xm)
+                    < self.g_T[self.x_goal]
+                    and self.g_T[vm] + actual_cost < self.g_T[xm]
+                ):
+                    if xm in self.Tree.V:
                             # remove edges
-                            edge_delete = set()
-                            for v, x in self.Tree.E:
-                                if x == xm:
-                                    edge_delete.add((v, x))
+                        edge_delete = {(v, x) for v, x in self.Tree.E if x == xm}
+                        for edge in edge_delete:
+                            self.Tree.E.remove(edge)
+                    else:
+                        self.X_sample.remove(xm)
+                        self.Tree.V.add(xm)
+                        self.Tree.QV.add(xm)
 
-                            for edge in edge_delete:
-                                self.Tree.E.remove(edge)
-                        else:
-                            self.X_sample.remove(xm)
-                            self.Tree.V.add(xm)
-                            self.Tree.QV.add(xm)
+                    self.g_T[xm] = self.g_T[vm] + actual_cost
+                    self.Tree.E.add((vm, xm))
+                    xm.parent = vm
 
-                        self.g_T[xm] = self.g_T[vm] + actual_cost
-                        self.Tree.E.add((vm, xm))
-                        xm.parent = vm
+                    set_delete = {
+                        (v, x)
+                        for v, x in self.Tree.QE
+                        if x == xm
+                        and self.g_T[v] + self.calc_dist(v, xm) >= self.g_T[xm]
+                    }
 
-                        set_delete = set()
-                        for v, x in self.Tree.QE:
-                            if x == xm and self.g_T[v] + self.calc_dist(v, xm) >= self.g_T[xm]:
-                                set_delete.add((v, x))
-
-                        for edge in set_delete:
-                            self.Tree.QE.remove(edge)
+                    for edge in set_delete:
+                        self.Tree.QE.remove(edge)
             else:
                 self.Tree.QE = set()
                 self.Tree.QV = set()
@@ -220,18 +217,15 @@ class BITStar:
                         random.uniform(self.y_range[0] + delta, self.y_range[1] - delta))
             if self.utils.is_inside_obs(node):
                 continue
-            else:
-                Sample.add(node)
-                ind += 1
+            Sample.add(node)
+            ind += 1
 
         return Sample
 
     def radius(self, q):
         cBest = self.g_T[self.x_goal]
         lambda_X = len([1 for v in self.Tree.V if self.f_estimated(v) <= cBest])
-        radius = 2 * self.eta * (1.5 * lambda_X / math.pi * math.log(q) / q) ** 0.5
-
-        return radius
+        return 2 * self.eta * (1.5 * lambda_X / math.pi * math.log(q) / q) ** 0.5
 
     def ExpandVertex(self, v):
         self.Tree.QV.remove(v)
@@ -254,17 +248,21 @@ class BITStar:
                         self.g_T[w] = np.inf
 
     def BestVertexQueueValue(self):
-        if not self.Tree.QV:
-            return np.inf
-
-        return min(self.g_T[v] + self.h_estimated(v) for v in self.Tree.QV)
+        return (
+            min(self.g_T[v] + self.h_estimated(v) for v in self.Tree.QV)
+            if self.Tree.QV
+            else np.inf
+        )
 
     def BestEdgeQueueValue(self):
-        if not self.Tree.QE:
-            return np.inf
-
-        return min(self.g_T[v] + self.calc_dist(v, x) + self.h_estimated(x)
-                   for v, x in self.Tree.QE)
+        return (
+            min(
+                self.g_T[v] + self.calc_dist(v, x) + self.h_estimated(x)
+                for v, x in self.Tree.QE
+            )
+            if self.Tree.QE
+            else np.inf
+        )
 
     def BestInVertexQueue(self):
         if not self.Tree.QV:
@@ -299,9 +297,7 @@ class BITStar:
         e1 = np.array([[1.0], [0.0], [0.0]])
         M = a1 @ e1.T
         U, _, V_T = np.linalg.svd(M, True, True)
-        C = U @ np.diag([1.0, 1.0, np.linalg.det(U) * np.linalg.det(V_T.T)]) @ V_T
-
-        return C
+        return U @ np.diag([1.0, 1.0, np.linalg.det(U) * np.linalg.det(V_T.T)]) @ V_T
 
     @staticmethod
     def calc_dist(start, end):

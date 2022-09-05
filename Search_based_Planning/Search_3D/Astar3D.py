@@ -4,13 +4,17 @@
 """
 @author: yue qi
 """
+
 import numpy as np
 import matplotlib.pyplot as plt
 
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Search_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Search_based_Planning/"
+)
+
 from Search_3D.env3D import env
 from Search_3D.utils3D import getDist, getRay, g_Space, Heuristic, getNearest, isCollide, \
     cost, children, StateSpace, heuristic_fun
@@ -21,14 +25,14 @@ import time
 class Weighted_A_star(object):
     def __init__(self, resolution=0.5):
         self.Alldirec = {(1, 0, 0): 1, (0, 1, 0): 1, (0, 0, 1): 1, \
-                        (-1, 0, 0): 1, (0, -1, 0): 1, (0, 0, -1): 1, \
-                        (1, 1, 0): np.sqrt(2), (1, 0, 1): np.sqrt(2), (0, 1, 1): np.sqrt(2), \
-                        (-1, -1, 0): np.sqrt(2), (-1, 0, -1): np.sqrt(2), (0, -1, -1): np.sqrt(2), \
-                        (1, -1, 0): np.sqrt(2), (-1, 1, 0): np.sqrt(2), (1, 0, -1): np.sqrt(2), \
-                        (-1, 0, 1): np.sqrt(2), (0, 1, -1): np.sqrt(2), (0, -1, 1): np.sqrt(2), \
-                        (1, 1, 1): np.sqrt(3), (-1, -1, -1) : np.sqrt(3), \
-                        (1, -1, -1): np.sqrt(3), (-1, 1, -1): np.sqrt(3), (-1, -1, 1): np.sqrt(3), \
-                        (1, 1, -1): np.sqrt(3), (1, -1, 1): np.sqrt(3), (-1, 1, 1): np.sqrt(3)}
+                            (-1, 0, 0): 1, (0, -1, 0): 1, (0, 0, -1): 1, \
+                            (1, 1, 0): np.sqrt(2), (1, 0, 1): np.sqrt(2), (0, 1, 1): np.sqrt(2), \
+                            (-1, -1, 0): np.sqrt(2), (-1, 0, -1): np.sqrt(2), (0, -1, -1): np.sqrt(2), \
+                            (1, -1, 0): np.sqrt(2), (-1, 1, 0): np.sqrt(2), (1, 0, -1): np.sqrt(2), \
+                            (-1, 0, 1): np.sqrt(2), (0, 1, -1): np.sqrt(2), (0, -1, 1): np.sqrt(2), \
+                            (1, 1, 1): np.sqrt(3), (-1, -1, -1) : np.sqrt(3), \
+                            (1, -1, -1): np.sqrt(3), (-1, 1, -1): np.sqrt(3), (-1, -1, 1): np.sqrt(3), \
+                            (1, 1, -1): np.sqrt(3), (1, -1, 1): np.sqrt(3), (-1, 1, 1): np.sqrt(3)}
         self.settings = 'NonCollisionChecking' # 'NonCollisionChecking' or 'CollisionChecking'                
         self.env = env(resolution=resolution)
         self.start, self.goal = tuple(self.env.start), tuple(self.env.goal)
@@ -59,8 +63,6 @@ class Weighted_A_star(object):
                 # if xj not in self.CLOSED:
                 if xj not in self.g:
                     self.g[xj] = np.inf
-                else:
-                    pass
                 a = self.g[xi] + cost(self, xi, xj)
                 if a < self.g[xj]:
                     self.g[xj] = a
@@ -68,10 +70,10 @@ class Weighted_A_star(object):
                     # assign or update the priority in the open
                     self.OPEN.put(xj, a + 1 * heuristic_fun(self, xj))
             # For specified expanded nodes, used primarily in LRTA*
-            if N:
-                if len(self.CLOSED) % N == 0:
-                    break
-            if self.ind % 100 == 0: print('number node expanded = ' + str(len(self.V)))
+            if N and len(self.CLOSED) % N == 0:
+                break
+            if self.ind % 100 == 0:
+                print(f'number node expanded = {len(self.V)}')
             self.ind += 1
 
         self.lastpoint = xi

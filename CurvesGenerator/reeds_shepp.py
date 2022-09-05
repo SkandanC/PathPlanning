@@ -64,11 +64,14 @@ def set_path(paths, lengths, ctypes):
 
     # check same path exist
     for path_e in paths:
-        if path_e.ctypes == path.ctypes:
-            if sum([x - y for x, y in zip(path_e.lengths, path.lengths)]) <= 0.01:
-                return paths  # not insert path
+        if (
+            path_e.ctypes == path.ctypes
+            and sum(x - y for x, y in zip(path_e.lengths, path.lengths))
+            <= 0.01
+        ):
+            return paths  # not insert path
 
-    path.L = sum([abs(i) for i in lengths])
+    path.L = sum(abs(i) for i in lengths)
 
     if path.L >= MAX_LENGTH:
         return paths
@@ -236,11 +239,7 @@ def calc_tauOmega(u, v, xi, eta, phi):
     t1 = math.atan2(eta * A - xi * B, xi * A + eta * B)
     t2 = 2.0 * (math.cos(delta) - math.cos(v) - math.cos(u)) + 3.0
 
-    if t2 < 0:
-        tau = M(t1 + PI)
-    else:
-        tau = M(t1)
-
+    tau = M(t1 + PI) if t2 < 0 else M(t1)
     omega = M(tau - u + v - phi)
 
     return tau, omega
@@ -461,33 +460,17 @@ def generate_local_course(L, lengths, mode, maxc, step_size):
     directions = [0 for _ in range(point_num)]
     ind = 1
 
-    if lengths[0] > 0.0:
-        directions[0] = 1
-    else:
-        directions[0] = -1
-
-    if lengths[0] > 0.0:
-        d = step_size
-    else:
-        d = -step_size
-
+    directions[0] = 1 if lengths[0] > 0.0 else -1
+    d = step_size if lengths[0] > 0.0 else -step_size
     pd = d
     ll = 0.0
 
     for m, l, i in zip(mode, lengths, range(len(mode))):
-        if l > 0.0:
-            d = step_size
-        else:
-            d = -step_size
-
+        d = step_size if l > 0.0 else -step_size
         ox, oy, oyaw = px[ind], py[ind], pyaw[ind]
 
         ind -= 1
-        if i >= 1 and (lengths[i - 1] * lengths[i]) > 0:
-            pd = -d - ll
-        else:
-            pd = d - ll
-
+        pd = -d - ll if i >= 1 and (lengths[i - 1] * lengths[i]) > 0 else d - ll
         while abs(pd) <= abs(l):
             ind += 1
             px, py, pyaw, directions = \
@@ -532,11 +515,7 @@ def interpolate(ind, l, m, maxc, ox, oy, oyaw, px, py, pyaw, directions):
     elif m == "R":
         pyaw[ind] = oyaw - l
 
-    if l > 0.0:
-        directions[ind] = 1
-    else:
-        directions[ind] = -1
-
+    directions[ind] = 1 if l > 0.0 else -1
     return px, py, pyaw, directions
 
 
@@ -600,11 +579,7 @@ def get_label(path):
 
     for m, l in zip(path.ctypes, path.lengths):
         label = label + m
-        if l > 0.0:
-            label = label + "+"
-        else:
-            label = label + "-"
-
+        label = f"{label}+" if l > 0.0 else f"{label}-"
     return label
 
 
@@ -631,7 +606,7 @@ def calc_curvature(x, y, yaw, directions):
         if directions[i] <= 0.0:
             curvature = -curvature
 
-        if len(c) == 0:
+        if not c:
             ds.append(d)
             c.append(curvature)
 
@@ -658,12 +633,14 @@ def check_path(sx, sy, syaw, gx, gy, gyaw, maxc):
         assert abs(path.yaw[-1] - gyaw) <= 0.01
 
         # course distance check
-        d = [math.hypot(dx, dy)
-             for dx, dy in zip(np.diff(path.x[0:len(path.x) - 1]),
-                               np.diff(path.y[0:len(path.y) - 1]))]
+        d = [
+            math.hypot(dx, dy)
+            for dx, dy in zip(np.diff(path.x[:-1]), np.diff(path.y[:-1]))
+        ]
 
-        for i in range(len(d)):
-            assert abs(d[i] - STEP_SIZE) <= 0.001
+
+        for item in d:
+            assert abs(item - STEP_SIZE) <= 0.001
 
 
 def main():

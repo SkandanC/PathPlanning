@@ -61,7 +61,7 @@ class DynamicRrt:
         self.waypoint = []
 
     def planning(self):
-        for i in range(self.iter_max):
+        for _ in range(self.iter_max):
             node_rand = self.generate_random_node(self.goal_sample_rate)
             node_near = self.nearest_neighbor(self.vertex, node_rand)
             node_new = self.new_state(node_near, node_rand)
@@ -148,15 +148,16 @@ class DynamicRrt:
             return True
 
         o, d = self.utils.get_ray(start, end)
-        if self.utils.is_intersect_circle(o, d, [obs_add[0], obs_add[1]], obs_add[2]):
-            return True
-
-        return False
+        return bool(
+            self.utils.is_intersect_circle(
+                o, d, [obs_add[0], obs_add[1]], obs_add[2]
+            )
+        )
 
     def replanning(self):
         self.TrimRRT()
 
-        for i in range(self.iter_max):
+        for _ in range(self.iter_max):
             node_rand = self.generate_random_node_replanning(self.goal_sample_rate, self.waypoint_sample_rate)
             node_near = self.nearest_neighbor(self.vertex, node_rand)
             node_new = self.new_state(node_near, node_rand)
@@ -187,7 +188,7 @@ class DynamicRrt:
 
         self.vertex = [node for node in self.vertex if node.flag == "VALID"]
         self.vertex_old = copy.deepcopy(self.vertex)
-        self.edges = [Edge(node.parent, node) for node in self.vertex[1:len(self.vertex)]]
+        self.edges = [Edge(node.parent, node) for node in self.vertex[1:]]
 
     def generate_random_node(self, goal_sample_rate):
         delta = self.utils.delta
@@ -291,9 +292,7 @@ class DynamicRrt:
 
     def plot_visited(self, animation=True):
         if animation:
-            count = 0
-            for node in self.vertex:
-                count += 1
+            for count, node in enumerate(self.vertex, start=1):
                 if node.parent:
                     plt.plot([node.parent.x, node.x], [node.parent.y, node.y], "-g")
                     plt.gcf().canvas.mpl_connect('key_release_event',
@@ -312,10 +311,7 @@ class DynamicRrt:
                 plt.plot([node.parent.x, node.x], [node.parent.y, node.y], "-g")
 
     def plot_vertex_new(self):
-        count = 0
-
-        for node in self.vertex_new:
-            count += 1
+        for count, node in enumerate(self.vertex_new, start=1):
             if node.parent:
                 plt.plot([node.parent.x, node.x], [node.parent.y, node.y], color='darkorange')
                 plt.gcf().canvas.mpl_connect('key_release_event',

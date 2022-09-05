@@ -26,10 +26,7 @@ def calc_4points_bezier_path(sx, sy, syaw, gx, gy, gyaw, offset):
 
 
 def calc_bezier_path(control_points, n_points=100):
-    traj = []
-
-    for t in np.linspace(0, 1, n_points):
-        traj.append(bezier(t, control_points))
+    traj = [bezier(t, control_points) for t in np.linspace(0, 1, n_points)]
 
     return np.array(traj)
 

@@ -20,24 +20,22 @@ class QuarticPolynomial:
         self.a4 = X[1]
 
     def calc_xt(self, t):
-        xt = self.a0 + self.a1 * t + self.a2 * t ** 2 + \
-             self.a3 * t ** 3 + self.a4 * t ** 4
-
-        return xt
+        return (
+            self.a0
+            + self.a1 * t
+            + self.a2 * t**2
+            + self.a3 * t**3
+            + self.a4 * t**4
+        )
 
     def calc_dxt(self, t):
-        xt = self.a1 + 2 * self.a2 * t + \
-             3 * self.a3 * t ** 2 + 4 * self.a4 * t ** 3
-
-        return xt
+        return (
+            self.a1 + 2 * self.a2 * t + 3 * self.a3 * t**2 + 4 * self.a4 * t**3
+        )
 
     def calc_ddxt(self, t):
-        xt = 2 * self.a2 + 6 * self.a3 * t + 12 * self.a4 * t ** 2
-
-        return xt
+        return 2 * self.a2 + 6 * self.a3 * t + 12 * self.a4 * t ** 2
 
     def calc_dddxt(self, t):
-        xt = 6 * self.a3 + 24 * self.a4 * t
-
-        return xt
+        return 6 * self.a3 + 24 * self.a4 * t
 

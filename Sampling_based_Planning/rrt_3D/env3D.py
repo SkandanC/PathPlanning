@@ -29,29 +29,19 @@ def getblocks():
     Obstacles = []
     for i in block:
         i = np.array(i)
-        Obstacles.append([j for j in i])
+        Obstacles.append(list(i))
     return np.array(Obstacles)
 
 def getballs():
     spheres = [[2.0,6.0,2.5,1.0],[14.0,14.0,2.5,2]]
-    Obstacles = []
-    for i in spheres:
-        Obstacles.append([j for j in i])
+    Obstacles = [list(i) for i in spheres]
     return np.array(Obstacles)
 
 def getAABB(blocks):
-    # used for Pyrr package for detecting collision
-    AABB = []
-    for i in blocks:
-        AABB.append(np.array([np.add(i[0:3], -0), np.add(i[3:6], 0)]))  # make AABBs alittle bit of larger
-    return AABB
+    return [np.array([np.add(i[:3], -0), np.add(i[3:6], 0)]) for i in blocks]
 
 def getAABB2(blocks):
-    # used in lineAABB
-    AABB = []
-    for i in blocks:
-        AABB.append(aabb(i))
-    return AABB
+    return [aabb(i) for i in blocks]
 
 def add_block(block = [1.51e+01, 0.00e+00, 2.10e+00, 1.59e+01, 5.00e+00, 6.00e+00]):
     return block

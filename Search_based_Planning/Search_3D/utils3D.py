@@ -29,10 +29,10 @@ def getNearest(Space, pt):
 
 def Heuristic(Space, t):
     '''Max norm distance'''
-    h = {}
-    for k in Space.keys():
-        h[k] = max([abs(t[0] - k[0]), abs(t[1] - k[1]), abs(t[2] - k[2])])
-    return h
+    return {
+        k: max([abs(t[0] - k[0]), abs(t[1] - k[1]), abs(t[2] - k[2])])
+        for k in Space.keys()
+    }
 
 def heuristic_fun(initparams, k, t=None):
     if t is None:
@@ -42,18 +42,15 @@ def heuristic_fun(initparams, k, t=None):
 def isinbound(i, x, mode = False, factor = 0, isarray = False):
     if mode == 'obb':
         return isinobb(i, x, isarray)
-    if isarray:
-        compx = (i[0] - factor <= x[:,0]) & (x[:,0] < i[3] + factor) 
-        compy = (i[1] - factor <= x[:,1]) & (x[:,1] < i[4] + factor) 
-        compz = (i[2] - factor <= x[:,2]) & (x[:,2] < i[5] + factor) 
-        return compx & compy & compz
-    else:    
+    if not isarray:
         return i[0] - factor <= x[0] < i[3] + factor and i[1] - factor <= x[1] < i[4] + factor and i[2] - factor <= x[2] < i[5] + factor
+    compx = (i[0] - factor <= x[:,0]) & (x[:,0] < i[3] + factor)
+    compy = (i[1] - factor <= x[:,1]) & (x[:,1] < i[4] + factor)
+    compz = (i[2] - factor <= x[:,2]) & (x[:,2] < i[5] + factor)
+    return compx & compy & compz
 
 def isinball(i, x, factor = 0):
-    if getDist(i[0:3], x) <= i[3] + factor:
-        return True
-    return False
+    return getDist(i[:3], x) <= i[3] + factor
 
 def isinobb(i, x, isarray = False):
     # transform the point from {W} to {body}
@@ -84,7 +81,7 @@ def OBB2AABB(obb):
 
 def lineSphere(p0, p1, ball):
     # https://cseweb.ucsd.edu/classes/sp19/cse291-d/Files/CSE291_13_CollisionDetection.pdf
-    c, r = ball[0:3], ball[-1]
+    c, r = ball[:3], ball[-1]
     line = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]]
     d1 = [c[0] - p0[0], c[1] - p0[1], c[2] - p0[2]]
     t = (1 / (line[0] * line[0] + line[1] * line[1] + line[2] * line[2])) * (
@@ -94,7 +91,7 @@ def lineSphere(p0, p1, ball):
     elif t >= 1:
         d2 = [c[0] - p1[0], c[1] - p1[1], c[2] - p1[2]]
         if (d2[0] * d2[0] + d2[1] * d2[1] + d2[2] * d2[2]) <= r ** 2: return True
-    elif 0 < t < 1:
+    else:
         x = [p0[0] + t * line[0], p0[1] + t * line[1], p0[2] + t * line[2]]
         k = [c[0] - x[0], c[1] - x[1], c[2] - x[2]]
         if (k[0] * k[0] + k[1] * k[1] + k[2] * k[2]) <= r ** 2: return True
@@ -119,9 +116,7 @@ def lineAABB(p0, p1, dist, aabb):
     if abs(T[2] * I[0] - T[0] * I[2]) > r: return False
     # I.cross(z axis) ?
     r = aabb.E[0] * abs(I[1]) + aabb.E[1] * abs(I[0])
-    if abs(T[0] * I[1] - T[1] * I[0]) > r: return False
-
-    return True
+    return abs(T[0] * I[1] - T[1] * I[0]) <= r
 
 def lineOBB(p0, p1, dist, obb):
     # transform points to obb frame
@@ -150,19 +145,19 @@ def OBBOBB(obb1, obb2):
     # vdotA[0],vdotA[1],vdotA[2]
     T = [v@B[0], v@B[1], v@B[2]]
     R = np.zeros([3,3])
-    for i in range(0,3):
-        for k in range(0,3):
+    for i in range(3):
+        for k in range(3):
             R[i][k] = A[i]@B[k]
             # use separating axis thm for all 15 separating axes
             # if the separating axis cannot be found, then overlap
             # A's basis vector
-            for i in range(0,3):
+            for i in range(3):
                 ra = a[i]
                 rb = b[0]*abs(R[i][0]) + b[1]*abs(R[i][1]) + b[2]*abs(R[i][2])
                 t = abs(T[i])
                 if t > ra + rb:
                     return False
-            for k in range(0,3):
+            for k in range(3):
                 ra = a[0]*abs(R[0][k]) + a[1]*abs(R[1][k]) + a[2]*abs(R[2][k])
                 rb = b[k]
                 t = abs(T[0]*R[0][k] + T[1]*R[1][k] + T[2]*R[2][k])
@@ -230,12 +225,7 @@ def OBBOBB(obb1, obb2):
             ra = a[0]*abs(R[1][2]) + a[1]*abs(R[0][2])
             rb = b[0]*abs(R[2][1]) + b[1]*abs(R[2][0])
             t = abs( T[1]*R[0][2] - T[0]*R[1][2] )
-            if t > ra + rb:
-                return False
-
-            # no separating axis found,
-            # the two boxes overlap 
-            return True
+            return t <= ra + rb
 
 def StateSpace(env, factor=0):
     boundary = env.boundary
@@ -256,16 +246,13 @@ def StateSpace(env, factor=0):
 def g_Space(initparams):
     '''This function is used to get nodes and discretize the space.
        State space is by s*y*z,3 where each 3 is a point in 3D.'''
-    g = {}
     Space = StateSpace(initparams.env)
-    for v in Space:
-        g[v] = np.inf  # this hashmap initialize all g values at inf
-    return g
+    return {v: np.inf for v in Space}
 
 def isCollide(initparams, x, child, dist=None):
     '''see if line intersects obstacle'''
     '''specified for expansion in A* 3D lookup table'''
-    if dist==None:
+    if dist is None:
         dist = getDist(x, child)
     # check in bound
     if not isinbound(initparams.env.boundary, child): 
@@ -291,11 +278,11 @@ def children(initparams, x, settings = 0):
     resolution = initparams.env.resolution
     for direc in initparams.Alldirec:
         child = tuple(map(np.add, x, np.multiply(direc, resolution)))
-        if any([isinobb(i, child) for i in initparams.env.OBB]):
+        if any(isinobb(i, child) for i in initparams.env.OBB):
             continue
-        if any([isinball(i ,child) for i in initparams.env.balls]):
+        if any(isinball(i, child) for i in initparams.env.balls):
             continue
-        if any([isinbound(i ,child) for i in initparams.env.blocks]):
+        if any(isinbound(i, child) for i in initparams.env.blocks):
             continue
         if isinbound(initparams.env.boundary, child):
             allchild.append(child)
@@ -309,30 +296,21 @@ def obstacleFree(initparams, x):
     for i in initparams.env.blocks:
         if isinbound(i, x):
             return False
-    for i in initparams.env.balls:
-        if isinball(i, x):
-            return False
-    return True
+    return not any(isinball(i, x) for i in initparams.env.balls)
 
 
 def cost(initparams, i, j, dist=None, settings='Euclidean'):
     if initparams.settings == 'NonCollisionChecking':
-        if dist==None:
+        if dist is None:
             dist = getDist(i,j)
         collide = False
     else:
         collide, dist = isCollide(initparams, i, j, dist)
     # collide, dist= False, getDist(i, j)
     if settings == 'Euclidean':
-        if collide:
-            return np.inf
-        else:
-            return dist
+        return np.inf if collide else dist
     if settings == 'Manhattan':
-        if collide:
-            return np.inf
-        else:
-            return getManDist(i, j)
+        return np.inf if collide else getManDist(i, j)
 
 
 def initcost(initparams):

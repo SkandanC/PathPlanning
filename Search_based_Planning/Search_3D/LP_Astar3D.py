@@ -4,7 +4,10 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Search_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Search_based_Planning/"
+)
+
 from Search_3D.env3D import env
 from Search_3D import Astar3D
 from Search_3D.utils3D import getDist, getRay, g_Space, Heuristic, getNearest, isinbound, isinball, \
@@ -18,14 +21,14 @@ import time
 class Lifelong_Astar(object):
     def __init__(self,resolution = 1):
         self.Alldirec = {(1, 0, 0): 1, (0, 1, 0): 1, (0, 0, 1): 1, \
-                        (-1, 0, 0): 1, (0, -1, 0): 1, (0, 0, -1): 1, \
-                        (1, 1, 0): np.sqrt(2), (1, 0, 1): np.sqrt(2), (0, 1, 1): np.sqrt(2), \
-                        (-1, -1, 0): np.sqrt(2), (-1, 0, -1): np.sqrt(2), (0, -1, -1): np.sqrt(2), \
-                        (1, -1, 0): np.sqrt(2), (-1, 1, 0): np.sqrt(2), (1, 0, -1): np.sqrt(2), \
-                        (-1, 0, 1): np.sqrt(2), (0, 1, -1): np.sqrt(2), (0, -1, 1): np.sqrt(2), \
-                        (1, 1, 1): np.sqrt(3), (-1, -1, -1) : np.sqrt(3), \
-                        (1, -1, -1): np.sqrt(3), (-1, 1, -1): np.sqrt(3), (-1, -1, 1): np.sqrt(3), \
-                        (1, 1, -1): np.sqrt(3), (1, -1, 1): np.sqrt(3), (-1, 1, 1): np.sqrt(3)}
+                            (-1, 0, 0): 1, (0, -1, 0): 1, (0, 0, -1): 1, \
+                            (1, 1, 0): np.sqrt(2), (1, 0, 1): np.sqrt(2), (0, 1, 1): np.sqrt(2), \
+                            (-1, -1, 0): np.sqrt(2), (-1, 0, -1): np.sqrt(2), (0, -1, -1): np.sqrt(2), \
+                            (1, -1, 0): np.sqrt(2), (-1, 1, 0): np.sqrt(2), (1, 0, -1): np.sqrt(2), \
+                            (-1, 0, 1): np.sqrt(2), (0, 1, -1): np.sqrt(2), (0, -1, 1): np.sqrt(2), \
+                            (1, 1, 1): np.sqrt(3), (-1, -1, -1) : np.sqrt(3), \
+                            (1, -1, -1): np.sqrt(3), (-1, 1, -1): np.sqrt(3), (-1, -1, 1): np.sqrt(3), \
+                            (1, 1, -1): np.sqrt(3), (1, -1, 1): np.sqrt(3), (-1, 1, 1): np.sqrt(3)}
         self.env = env(resolution=resolution)
         self.g = g_Space(self)
         self.start, self.goal = getNearest(self.g, self.env.start), getNearest(self.g, self.env.goal)
@@ -33,7 +36,7 @@ class Lifelong_Astar(object):
         self.rhs = g_Space(self) # rhs(.) = g(.) = inf
         self.rhs[self.start] = 0 # rhs(x0) = 0
         self.h = Heuristic(self.g, self.goal)
-        
+
         self.OPEN = queue.MinheapPQ()  # store [point,priority]
         self.OPEN.put(self.x0, [self.h[self.x0],0])
         self.CLOSED = set()
@@ -63,9 +66,7 @@ class Lifelong_Astar(object):
                 cd = np.array(children)[diff]
                 for i in cd:
                     NodeToChange.add(tuple(i))
-                self.COST[xi] = toUpdate
-            else:
-                self.COST[xi] = toUpdate
+            self.COST[xi] = toUpdate
         return NodeToChange
 
     def getCOSTset(self,xi,xj):
@@ -111,8 +112,7 @@ class Lifelong_Astar(object):
 
     def cost(self, x, y):
         collide, dist = isCollide(self, x, y)
-        if collide: return np.inf
-        else: return dist
+        return np.inf if collide else dist
             
     def key(self,xi,epsilion = 1):
         return [min(self.g[xi],self.rhs[xi]) + epsilion*self.h[xi],min(self.g[xi],self.rhs[xi])]
@@ -141,7 +141,10 @@ class Lifelong_Astar(object):
     #------------------Lifelong Plannning A* 
     def UpdateMembership(self, xi, xparent=None):
         if xi != self.x0:
-            self.rhs[xi] = min([self.g[j] + self.getCOSTset(xi,j) for j in self.CHILDREN[xi]])
+            self.rhs[xi] = min(
+                self.g[j] + self.getCOSTset(xi, j) for j in self.CHILDREN[xi]
+            )
+
         self.OPEN.check_remove(xi)
         if self.g[xi] != self.rhs[xi]:
             self.OPEN.put(xi,self.key(xi))
@@ -183,9 +186,9 @@ if __name__ == '__main__':
     sta = time.time()
     Astar = Lifelong_Astar(1)
     Astar.ComputePath()
-    for i in range(5):
+    for _ in range(5):
         Astar.change_env()
         Astar.ComputePath()
         plt.pause(1)
-    
+
     print(time.time() - sta)

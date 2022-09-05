@@ -5,6 +5,7 @@ source: Janson, Lucas, et al. "Fast marching tree: A fast marching sampling-base
         for optimal motion planning in many dimensions." 
         The International journal of robotics research 34.7 (2015): 883-921.
 """
+
 import numpy as np
 import matplotlib.pyplot as plt
 import time
@@ -14,7 +15,10 @@ import copy
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Sampling_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Sampling_based_Planning/"
+)
+
 from rrt_3D.env3D import env
 from rrt_3D.utils3D import getDist, sampleFree, nearest, steer, isCollide
 from rrt_3D.plot_util3D import set_axes_equal, draw_block_list, draw_Spheres, draw_obb, draw_line, make_transparent
@@ -41,10 +45,7 @@ class FMT_star:
         self.Parent = {}
 
     def generateSampleSet(self, n):
-        V = set()
-        for i in range(n):
-            V.add(tuple(sampleFree(self, bias = 0.0)))
-        return V
+        return {tuple(sampleFree(self, bias = 0.0)) for _ in range(n)}
 
     def initNodeSets(self):
         # open set
@@ -68,8 +69,7 @@ class FMT_star:
     def Near(self, nodeset, node, rn):
         if node in self.neighbors:
             return self.neighbors[node]
-        validnodes = {i for i in nodeset if getDist(i, node) < rn}
-        return validnodes
+        return {i for i in nodeset if getDist(i, node) < rn}
 
     def Save(self, V_associated, node):
         self.neighbors[node] = V_associated
@@ -126,9 +126,9 @@ class FMT_star:
             self.Vclosed.add(z)
             if len(self.Vopen) == 0:
                 print('Failure')
-                return 
+                return
             ind += 1
-            print(str(ind) + ' node expanded')
+            print(f'{ind} node expanded')
             self.visualization(ind, E)
             # update current node
             Vopenlist = list(self.Vopen)
@@ -157,7 +157,7 @@ class FMT_star:
             #----------- end
             # generate axis objects
             ax = plt.subplot(111, projection='3d')
-            
+
             # ax.view_init(elev=0.+ 0.03*initparams.ind/(2*np.pi), azim=90 + 0.03*initparams.ind/(2*np.pi))
             # ax.view_init(elev=0., azim=90.)
             ax.view_init(elev=65., azim=60.)
@@ -174,8 +174,16 @@ class FMT_star:
             draw_line(ax, Path, color='r')
             # if len(V) > 0:
             #     ax.scatter3D(V[:, 0], V[:, 1], V[:, 2], s=2, color='g', )
-            ax.plot(start[0:1], start[1:2], start[2:], 'go', markersize=7, markeredgecolor='k')
-            ax.plot(goal[0:1], goal[1:2], goal[2:], 'ro', markersize=7, markeredgecolor='k')
+            ax.plot(
+                start[:1],
+                start[1:2],
+                start[2:],
+                'go',
+                markersize=7,
+                markeredgecolor='k',
+            )
+
+            ax.plot(goal[:1], goal[1:2], goal[2:], 'ro', markersize=7, markeredgecolor='k')
             # adjust the aspect ratio
             set_axes_equal(ax)
             make_transparent(ax)

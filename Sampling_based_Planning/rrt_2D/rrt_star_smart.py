@@ -127,12 +127,12 @@ class RrtStarSmart:
         beacons = []
 
         while node.parent:
-            near_vertex = [v for v in self.obs_vertex
-                           if (node.x - v[0]) ** 2 + (node.y - v[1]) ** 2 < 9]
-            if len(near_vertex) > 0:
-                for v in near_vertex:
-                    beacons.append(v)
-
+            if near_vertex := [
+                v
+                for v in self.obs_vertex
+                if (node.x - v[0]) ** 2 + (node.y - v[1]) ** 2 < 9
+            ]:
+                beacons.extend(iter(near_vertex))
             node = node.parent
 
         self.beacons = beacons
@@ -141,9 +141,7 @@ class RrtStarSmart:
         obs_vertex = []
 
         for obs in self.obs_vertex:
-            for vertex in obs:
-                obs_vertex.append(vertex)
-
+            obs_vertex.extend(iter(obs))
         self.obs_vertex = obs_vertex
 
     def Steer(self, x_start, x_goal):
@@ -160,10 +158,12 @@ class RrtStarSmart:
         r = 50 * math.sqrt((math.log(n) / n))
 
         dist_table = [(nd.x - node.x) ** 2 + (nd.y - node.y) ** 2 for nd in nodelist]
-        X_near = [nodelist[ind] for ind in range(len(dist_table)) if dist_table[ind] <= r ** 2 and
-                  not self.utils.is_collision(node, nodelist[ind])]
-
-        return X_near
+        return [
+            nodelist[ind]
+            for ind in range(len(dist_table))
+            if dist_table[ind] <= r**2
+            and not self.utils.is_collision(node, nodelist[ind])
+        ]
 
     def Sample(self, goal=None):
         if goal is None:
@@ -206,10 +206,7 @@ class RrtStarSmart:
         return path
 
     def InitialPathFound(self, node):
-        if self.Line(node, self.x_goal) < self.step_len:
-            return True
-
-        return False
+        return self.Line(node, self.x_goal) < self.step_len
 
     @staticmethod
     def Nearest(nodelist, n):
@@ -240,7 +237,7 @@ class RrtStarSmart:
 
     def animation(self):
         plt.cla()
-        self.plot_grid("rrt*-Smart, N = " + str(self.iter_max))
+        self.plot_grid(f"rrt*-Smart, N = {str(self.iter_max)}")
         plt.gcf().canvas.mpl_connect(
             'key_release_event',
             lambda event: [exit(0) if event.key == 'escape' else None])

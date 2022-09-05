@@ -28,11 +28,11 @@ class AraStar:
         self.obs = self.Env.obs                                             # position of obstacles
         self.e = e                                                          # weight
 
-        self.g = dict()                                                     # Cost to come
-        self.OPEN = dict()                                                  # priority queue / OPEN set
+        self.g = {}
+        self.OPEN = {}
         self.CLOSED = set()                                                 # CLOSED set
         self.INCONS = {}                                                    # INCONSISTENT set
-        self.PARENT = dict()                                                # relations
+        self.PARENT = {}
         self.path = []                                                      # planning path
         self.visited = []                                                   # order of visited nodes
 
@@ -51,12 +51,12 @@ class AraStar:
         self.ImprovePath()
         self.path.append(self.extract_path())
 
-        while self.update_e() > 1:                                          # continue condition
+        while self.update_e() > 1:                                  # continue condition
             self.e -= 0.4                                                   # increase weight
             self.OPEN.update(self.INCONS)
             self.OPEN = {s: self.f_value(s) for s in self.OPEN}             # update f_value of OPEN set
 
-            self.INCONS = dict()
+            self.INCONS = {}
             self.CLOSED = set()
             self.ImprovePath()                                              # improve path
             self.path.append(self.extract_path())

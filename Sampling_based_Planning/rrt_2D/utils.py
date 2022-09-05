@@ -97,11 +97,10 @@ class Utils:
             if self.is_intersect_rec(start, end, o, d, v4, v1):
                 return True
 
-        for (x, y, r) in self.obs_circle:
-            if self.is_intersect_circle(o, d, [x, y], r):
-                return True
-
-        return False
+        return any(
+            self.is_intersect_circle(o, d, [x, y], r)
+            for x, y, r in self.obs_circle
+        )
 
     def is_inside_obs(self, node):
         delta = self.delta
@@ -112,15 +111,14 @@ class Utils:
 
         for (x, y, w, h) in self.obs_rectangle:
             if 0 <= node.x - (x - delta) <= w + 2 * delta \
-                    and 0 <= node.y - (y - delta) <= h + 2 * delta:
+                        and 0 <= node.y - (y - delta) <= h + 2 * delta:
                 return True
 
-        for (x, y, w, h) in self.obs_boundary:
-            if 0 <= node.x - (x - delta) <= w + 2 * delta \
-                    and 0 <= node.y - (y - delta) <= h + 2 * delta:
-                return True
-
-        return False
+        return any(
+            0 <= node.x - (x - delta) <= w + 2 * delta
+            and 0 <= node.y - (y - delta) <= h + 2 * delta
+            for x, y, w, h in self.obs_boundary
+        )
 
     @staticmethod
     def get_ray(start, end):

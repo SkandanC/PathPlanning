@@ -4,13 +4,17 @@
 """
 @author: yue qi
 """
+
 import numpy as np
 import matplotlib.pyplot as plt
 
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Search_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Search_based_Planning/"
+)
+
 from Search_3D.env3D import env
 from Search_3D import Astar3D
 from Search_3D.utils3D import getDist, getRay, g_Space, Heuristic, getNearest, isCollide, \
