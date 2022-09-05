@@ -19,7 +19,7 @@ def CreateSphere(center, r):
 
 def draw_Spheres(ax, balls):
     for i in balls:
-        (xs, ys, zs) = CreateSphere(i[0:3], i[-1])
+        (xs, ys, zs) = CreateSphere(i[:3], i[-1])
         ax.plot_wireframe(xs, ys, zs, alpha=0.15, color="b")
 
 
@@ -40,8 +40,15 @@ def draw_block_list(ax, blocks, color=None, alpha=0.15):
     if type(ax) is Poly3DCollection:
         ax.set_verts(vl[fl])
     else:
-        h = ax.add_collection3d(Poly3DCollection(vl[fl], facecolors='black', alpha=alpha, linewidths=1, edgecolors='k'))
-        return h
+        return ax.add_collection3d(
+            Poly3DCollection(
+                vl[fl],
+                facecolors='black',
+                alpha=alpha,
+                linewidths=1,
+                edgecolors='k',
+            )
+        )
 
 
 def obb_verts(obb):
@@ -50,9 +57,7 @@ def obb_verts(obb):
                          [1, 1, -1], [-1, 1, -1], [-1, -1, -1], [1, -1, -1]])
     # P + (ori * E)
     ori_body = np.multiply(ori_body, obb.E)
-    # obb.O is orthornormal basis in {W}, aka rotation matrix in SO(3)
-    verts = (obb.O @ ori_body.T).T + obb.P
-    return verts
+    return (obb.O @ ori_body.T).T + obb.P
 
 
 def draw_obb(ax, OBB, color=None, alpha=0.15):
@@ -66,8 +71,15 @@ def draw_obb(ax, OBB, color=None, alpha=0.15):
     if type(ax) is Poly3DCollection:
         ax.set_verts(vl[fl])
     else:
-        h = ax.add_collection3d(Poly3DCollection(vl[fl], facecolors='black', alpha=alpha, linewidths=1, edgecolors='k'))
-        return h
+        return ax.add_collection3d(
+            Poly3DCollection(
+                vl[fl],
+                facecolors='black',
+                alpha=alpha,
+                linewidths=1,
+                edgecolors='k',
+            )
+        )
 
 
 def draw_line(ax, SET, visibility=1, color=None):
@@ -81,49 +93,56 @@ def draw_line(ax, SET, visibility=1, color=None):
 
 
 def visualization(initparams):
-    if initparams.ind % 100 == 0 or initparams.done:
-        #----------- list structure
-        # V = np.array(list(initparams.V))
-        # E = initparams.E
-        #----------- end
-        # edges = initparams.E
-        Path = np.array(initparams.Path)
-        start = initparams.env.start
-        goal = initparams.env.goal
+    if initparams.ind % 100 != 0 and not initparams.done:
+        return
+    #----------- list structure
+    # V = np.array(list(initparams.V))
+    # E = initparams.E
+    #----------- end
+    # edges = initparams.E
+    Path = np.array(initparams.Path)
+    start = initparams.env.start
+    goal = initparams.env.goal
         # edges = E.get_edge()
         #----------- list structure
-        edges = []
-        for i in initparams.Parent:
-            edges.append([i,initparams.Parent[i]])
-        #----------- end
-        # generate axis objects
-        ax = plt.subplot(111, projection='3d')
-        
-        # ax.view_init(elev=0.+ 0.03*initparams.ind/(2*np.pi), azim=90 + 0.03*initparams.ind/(2*np.pi))
-        # ax.view_init(elev=0., azim=90.)
-        ax.view_init(elev=65., azim=60.)
-        # ax.view_init(elev=-8., azim=180)
-        ax.clear()
-        # drawing objects
-        draw_Spheres(ax, initparams.env.balls)
-        draw_block_list(ax, initparams.env.blocks)
-        if initparams.env.OBB is not None:
-            draw_obb(ax, initparams.env.OBB)
-        draw_block_list(ax, np.array([initparams.env.boundary]), alpha=0)
-        draw_line(ax, edges, visibility=0.75, color='g')
-        draw_line(ax, Path, color='r')
+    edges = [[i,initparams.Parent[i]] for i in initparams.Parent]
+    #----------- end
+    # generate axis objects
+    ax = plt.subplot(111, projection='3d')
+
+    # ax.view_init(elev=0.+ 0.03*initparams.ind/(2*np.pi), azim=90 + 0.03*initparams.ind/(2*np.pi))
+    # ax.view_init(elev=0., azim=90.)
+    ax.view_init(elev=65., azim=60.)
+    # ax.view_init(elev=-8., azim=180)
+    ax.clear()
+    # drawing objects
+    draw_Spheres(ax, initparams.env.balls)
+    draw_block_list(ax, initparams.env.blocks)
+    if initparams.env.OBB is not None:
+        draw_obb(ax, initparams.env.OBB)
+    draw_block_list(ax, np.array([initparams.env.boundary]), alpha=0)
+    draw_line(ax, edges, visibility=0.75, color='g')
+    draw_line(ax, Path, color='r')
         # if len(V) > 0:
         #     ax.scatter3D(V[:, 0], V[:, 1], V[:, 2], s=2, color='g', )
-        ax.plot(start[0:1], start[1:2], start[2:], 'go', markersize=7, markeredgecolor='k')
-        ax.plot(goal[0:1], goal[1:2], goal[2:], 'ro', markersize=7, markeredgecolor='k')
-        # adjust the aspect ratio
-        ax.dist = 15
-        set_axes_equal(ax)
-        make_transparent(ax)
-        #plt.xlabel('s')
-        #plt.ylabel('y')
-        ax.set_axis_off()
-        plt.pause(0.0001)
+    ax.plot(
+        start[:1],
+        start[1:2],
+        start[2:],
+        'go',
+        markersize=7,
+        markeredgecolor='k',
+    )
+
+    ax.plot(goal[:1], goal[1:2], goal[2:], 'ro', markersize=7, markeredgecolor='k')
+    # adjust the aspect ratio
+    ax.dist = 15
+    set_axes_equal(ax)
+    make_transparent(ax)
+    #plt.xlabel('s')
+    #plt.ylabel('y')
+    ax.set_axis_off()
+    plt.pause(0.0001)
 
 def set_axes_equal(ax):
     '''Make axes of 3D plot have equal scale so that spheres appear as spheres,
@@ -163,5 +182,3 @@ def make_transparent(ax):
     ax.yaxis._axinfo["grid"]['color'] =  (1,1,1,0)
     ax.zaxis._axinfo["grid"]['color'] =  (1,1,1,0)
 
-if __name__ == '__main__':
-    pass

@@ -152,7 +152,7 @@ class LPAStar:
         s_list = set()
 
         for u in self.u_set:
-            s_next = tuple([s[i] + u[i] for i in range(2)])
+            s_next = tuple(s[i] + u[i] for i in range(2))
             if s_next not in self.obs:
                 s_list.add(s_next)
 
@@ -213,11 +213,13 @@ class LPAStar:
         path = [self.s_goal]
         s = self.s_goal
 
-        for k in range(100):
-            g_list = {}
-            for x in self.get_neighbor(s):
-                if not self.is_collision(s, x):
-                    g_list[x] = self.g[x]
+        for _ in range(100):
+            g_list = {
+                x: self.g[x]
+                for x in self.get_neighbor(s)
+                if not self.is_collision(s, x)
+            }
+
             s = min(g_list, key=g_list.get)
             path.append(s)
             if s == self.s_start:

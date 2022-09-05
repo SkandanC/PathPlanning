@@ -38,7 +38,7 @@ class ADStar:
         self.rhs[self.s_goal] = 0.0
         self.eps = eps
         self.OPEN[self.s_goal] = self.Key(self.s_goal)
-        self.CLOSED, self.INCONS = set(), dict()
+        self.CLOSED, self.INCONS = set(), {}
 
         self.visited = set()
         self.count = 0
@@ -55,9 +55,7 @@ class ADStar:
         self.plot_path(self.extract_path())
         self.visited = set()
 
-        while True:
-            if self.eps <= 1.0:
-                break
+        while self.eps > 1.0:
             self.eps -= 0.5
             self.OPEN.update(self.INCONS)
             for s in self.OPEN:
@@ -99,9 +97,7 @@ class ADStar:
                 plt.cla()
                 self.Plot.plot_grid(self.title)
 
-                while True:
-                    if len(self.INCONS) == 0:
-                        break
+                while len(self.INCONS) != 0:
                     self.OPEN.update(self.INCONS)
                     for s in self.OPEN:
                         self.OPEN[s] = self.Key(s)
@@ -149,9 +145,7 @@ class ADStar:
                     plt.cla()
                     self.Plot.plot_grid(self.title)
 
-                    while True:
-                        if self.eps <= 1.0:
-                            break
+                    while self.eps > 1.0:
                         self.eps -= 0.5
                         self.OPEN.update(self.INCONS)
                         for s in self.OPEN:
@@ -257,7 +251,7 @@ class ADStar:
     def get_neighbor(self, s):
         nei_list = set()
         for u in self.u_set:
-            s_next = tuple([s[i] + u[i] for i in range(2)])
+            s_next = tuple(s[i] + u[i] for i in range(2))
             if s_next not in self.obs:
                 nei_list.add(s_next)
 
@@ -272,11 +266,13 @@ class ADStar:
         path = [self.s_start]
         s = self.s_start
 
-        for k in range(100):
-            g_list = {}
-            for x in self.get_neighbor(s):
-                if not self.is_collision(s, x):
-                    g_list[x] = self.g[x]
+        for _ in range(100):
+            g_list = {
+                x: self.g[x]
+                for x in self.get_neighbor(s)
+                if not self.is_collision(s, x)
+            }
+
             s = min(g_list, key=g_list.get)
             path.append(s)
             if s == self.s_goal:

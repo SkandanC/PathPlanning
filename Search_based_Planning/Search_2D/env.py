@@ -23,10 +23,8 @@ class Env:
 
         x = self.x_range
         y = self.y_range
-        obs = set()
+        obs = {(i, 0) for i in range(x)}
 
-        for i in range(x):
-            obs.add((i, 0))
         for i in range(x):
             obs.add((i, y - 1))
 

@@ -29,7 +29,7 @@ class Spline:
         h = np.diff(x)
 
         # calc coefficient cBest
-        self.a = [iy for iy in y]
+        self.a = list(y)
 
         # calc coefficient cBest
         A = self.__calc_A(h)
@@ -41,7 +41,7 @@ class Spline:
         for i in range(self.nx - 1):
             self.d.append((self.c[i + 1] - self.c[i]) / (3.0 * h[i]))
             tb = (self.a[i + 1] - self.a[i]) / h[i] - h[i] * \
-                (self.c[i + 1] + 2.0 * self.c[i]) / 3.0
+                    (self.c[i + 1] + 2.0 * self.c[i]) / 3.0
             self.b.append(tb)
 
     def calc(self, t):
@@ -52,17 +52,16 @@ class Spline:
 
         """
 
-        if t < self.x[0]:
+        if t < self.x[0] or t > self.x[-1]:
             return None
-        elif t > self.x[-1]:
-            return None
-
         i = self.__search_index(t)
         dx = t - self.x[i]
-        result = self.a[i] + self.b[i] * dx + \
-            self.c[i] * dx ** 2.0 + self.d[i] * dx ** 3.0
-
-        return result
+        return (
+            self.a[i]
+            + self.b[i] * dx
+            + self.c[i] * dx**2.0
+            + self.d[i] * dx**3.0
+        )
 
     def calcd(self, t):
         u"""
@@ -71,30 +70,22 @@ class Spline:
         if t is outside of the input s, return None
         """
 
-        if t < self.x[0]:
+        if t < self.x[0] or t > self.x[-1]:
             return None
-        elif t > self.x[-1]:
-            return None
-
         i = self.__search_index(t)
         dx = t - self.x[i]
-        result = self.b[i] + 2.0 * self.c[i] * dx + 3.0 * self.d[i] * dx ** 2.0
-        return result
+        return self.b[i] + 2.0 * self.c[i] * dx + 3.0 * self.d[i] * dx ** 2.0
 
     def calcdd(self, t):
         u"""
         Calc second derivative
         """
 
-        if t < self.x[0]:
+        if t < self.x[0] or t > self.x[-1]:
             return None
-        elif t > self.x[-1]:
-            return None
-
         i = self.__search_index(t)
         dx = t - self.x[i]
-        result = 2.0 * self.c[i] + 6.0 * self.d[i] * dx
-        return result
+        return 2.0 * self.c[i] + 6.0 * self.d[i] * dx
 
     def __search_index(self, x):
         u"""
@@ -169,8 +160,7 @@ class Spline2D:
         ddx = self.sx.calcdd(s)
         dy = self.sy.calcd(s)
         ddy = self.sy.calcdd(s)
-        k = (ddy * dx - ddx * dy) / (dx ** 2 + dy ** 2)
-        return k
+        return (ddy * dx - ddx * dy) / (dx ** 2 + dy ** 2)
 
     def calc_yaw(self, s):
         u"""
@@ -178,8 +168,7 @@ class Spline2D:
         """
         dx = self.sx.calcd(s)
         dy = self.sy.calcd(s)
-        yaw = math.atan2(dy, dx)
-        return yaw
+        return math.atan2(dy, dx)
 
 
 def calc_spline_course(x, y, ds=0.1):

@@ -6,6 +6,7 @@ source: J. D. Gammell, S. S. Srinivasa, and T. D. Barfoot, “Informed RRT*:
         Optimal sampling-based path planning focused via direct sampling of
         an admissible ellipsoidal heuristic,” in IROS, 2997–3004, 2014.
 """
+
 import numpy as np
 import matplotlib.pyplot as plt
 import time
@@ -15,7 +16,10 @@ import copy
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Sampling_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Sampling_based_Planning/"
+)
+
 from rrt_3D.env3D import env
 from rrt_3D.utils3D import getDist, sampleFree, nearest, steer, isCollide, isinside, near, nearest, path
 from rrt_3D.plot_util3D import set_axes_equal, draw_block_list, draw_Spheres, draw_obb, draw_line, make_transparent
@@ -67,16 +71,13 @@ class IRRT:
         self.E = set()
         self.Xsoln = set()
         self.T = (self.V, self.E)
-        
+
         c = 1
         while self.ind <= self.N:
             print(self.ind)
             self.visualization()
             # print(self.i)
-            if len(self.Xsoln) == 0:
-                cbest = np.inf
-            else:
-                cbest = min({self.cost(xsln) for xsln in self.Xsoln})
+            cbest = min({self.cost(xsln) for xsln in self.Xsoln}) if self.Xsoln else np.inf
             xrand = self.Sample(self.xstart, self.xgoal, cbest)
             xnearest = nearest(self, xrand)
             xnew, dist = steer(self, xnearest, xrand)
@@ -97,7 +98,7 @@ class IRRT:
                             cmin = cnew
                 self.E.add((xmin, xnew))
                 self.Parent[xnew] = xmin
-                
+
                 for xnear in Xnear:
                     xnear = tuple(xnear)
                     cnear = self.cost(xnear)
@@ -166,8 +167,7 @@ class IRRT:
         a1 = (xgoal - xstart) / d
         M = np.outer(a1,[1,0,0])
         U, S, V = np.linalg.svd(M)
-        C = U@np.diag([1, 1, np.linalg.det(U)*np.linalg.det(V)])@V.T
-        return C
+        return U@np.diag([1, 1, np.linalg.det(U)*np.linalg.det(V)])@V.T
 
     def InGoalRegion(self, x):
         # Xgoal = {x in Xfree | \\x-xgoal\\2 <= rgoal}
@@ -186,48 +186,57 @@ class IRRT:
         return getDist(x, y)
 
     def visualization(self):
-        if self.ind % 500 == 0:
-            V = np.array(self.V)
-            edges = list(map(list, self.E))
-            Path = np.array(self.Path)
-            start = self.env.start
-            goal = self.env.goal
-            # edges = E.get_edge()
-            #----------- list structure
-            # edges = []
-            # for i in self.Parent:
-            #     edges.append([i,self.Parent[i]])
-            #----------- end
-            # generate axis objects
-            ax = plt.subplot(111, projection='3d')
-            
-            # ax.view_init(elev=0.+ 0.03*self.ind/(2*np.pi), azim=90 + 0.03*self.ind/(2*np.pi))
-            # ax.view_init(elev=0., azim=90.)
-            ax.view_init(elev=90., azim=0.)
-            # ax.view_init(elev=-8., azim=180)
-            ax.clear()
-            # drawing objects
-            draw_Spheres(ax, self.env.balls)
-            draw_block_list(ax, self.env.blocks)
-            if self.env.OBB is not None:
-                draw_obb(ax, self.env.OBB)
-            draw_block_list(ax, np.array([self.env.boundary]), alpha=0)
-            draw_line(ax, edges, visibility=0.75, color='g')
-            draw_line(ax, Path, color='r')
-            if self.show_ellipse:
-                draw_ellipsoid(ax, self.C, self.L, self.xcenter) # beware, depending on start and goal position, this might be bad for vis
-            if len(V) > 0:
-                ax.scatter3D(V[:, 0], V[:, 1], V[:, 2], s=2, color='g', )
-            ax.plot(start[0:1], start[1:2], start[2:], 'go', markersize=7, markeredgecolor='k')
-            ax.plot(goal[0:1], goal[1:2], goal[2:], 'ro', markersize=7, markeredgecolor='k')
-            # adjust the aspect ratio
-            ax.dist = 5
-            set_axes_equal(ax)
-            make_transparent(ax)
-            #plt.xlabel('s')
-            #plt.ylabel('y')
-            ax.set_axis_off()
-            plt.pause(0.0001)
+        if self.ind % 500 != 0:
+            return
+        V = np.array(self.V)
+        edges = list(map(list, self.E))
+        Path = np.array(self.Path)
+        start = self.env.start
+        goal = self.env.goal
+        # edges = E.get_edge()
+        #----------- list structure
+        # edges = []
+        # for i in self.Parent:
+        #     edges.append([i,self.Parent[i]])
+        #----------- end
+        # generate axis objects
+        ax = plt.subplot(111, projection='3d')
+
+        # ax.view_init(elev=0.+ 0.03*self.ind/(2*np.pi), azim=90 + 0.03*self.ind/(2*np.pi))
+        # ax.view_init(elev=0., azim=90.)
+        ax.view_init(elev=90., azim=0.)
+        # ax.view_init(elev=-8., azim=180)
+        ax.clear()
+        # drawing objects
+        draw_Spheres(ax, self.env.balls)
+        draw_block_list(ax, self.env.blocks)
+        if self.env.OBB is not None:
+            draw_obb(ax, self.env.OBB)
+        draw_block_list(ax, np.array([self.env.boundary]), alpha=0)
+        draw_line(ax, edges, visibility=0.75, color='g')
+        draw_line(ax, Path, color='r')
+        if self.show_ellipse:
+            draw_ellipsoid(ax, self.C, self.L, self.xcenter) # beware, depending on start and goal position, this might be bad for vis
+        if len(V) > 0:
+            ax.scatter3D(V[:, 0], V[:, 1], V[:, 2], s=2, color='g', )
+        ax.plot(
+            start[:1],
+            start[1:2],
+            start[2:],
+            'go',
+            markersize=7,
+            markeredgecolor='k',
+        )
+
+        ax.plot(goal[:1], goal[1:2], goal[2:], 'ro', markersize=7, markeredgecolor='k')
+        # adjust the aspect ratio
+        ax.dist = 5
+        set_axes_equal(ax)
+        make_transparent(ax)
+        #plt.xlabel('s')
+        #plt.ylabel('y')
+        ax.set_axis_off()
+        plt.pause(0.0001)
 
 if __name__ == '__main__':
     A = IRRT(show_ellipse=False)

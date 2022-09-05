@@ -48,7 +48,7 @@ class ExtendedRrt:
         self.waypoint = []
 
     def planning(self):
-        for i in range(self.iter_max):
+        for _ in range(self.iter_max):
             node_rand = self.generate_random_node(self.goal_sample_rate)
             node_near = self.nearest_neighbor(self.vertex, node_rand)
             node_new = self.new_state(node_near, node_rand)
@@ -96,7 +96,7 @@ class ExtendedRrt:
     def replanning(self):
         self.vertex = [self.s_start]
 
-        for i in range(self.iter_max):
+        for _ in range(self.iter_max):
             node_rand = self.generate_random_node_replanning(self.goal_sample_rate, self.waypoint_sample_rate)
             node_near = self.nearest_neighbor(self.vertex, node_rand)
             node_new = self.new_state(node_near, node_rand)
@@ -218,9 +218,7 @@ class ExtendedRrt:
     def plot_visited(self):
         animation = True
         if animation:
-            count = 0
-            for node in self.vertex:
-                count += 1
+            for count, node in enumerate(self.vertex, start=1):
                 if node.parent:
                     plt.plot([node.parent.x, node.x], [node.parent.y, node.y], "-g")
                     plt.gcf().canvas.mpl_connect('key_release_event',

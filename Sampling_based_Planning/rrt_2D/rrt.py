@@ -41,7 +41,7 @@ class Rrt:
         self.obs_boundary = self.env.obs_boundary
 
     def planning(self):
-        for i in range(self.iter_max):
+        for _ in range(self.iter_max):
             node_rand = self.generate_random_node(self.goal_sample_rate)
             node_near = self.nearest_neighbor(self.vertex, node_rand)
             node_new = self.new_state(node_near, node_rand)
@@ -102,9 +102,7 @@ def main():
     x_goal = (49, 24)  # Goal node
 
     rrt = Rrt(x_start, x_goal, 0.5, 0.05, 10000)
-    path = rrt.planning()
-
-    if path:
+    if path := rrt.planning():
         rrt.plotting.animation(rrt.vertex, path, "RRT", True)
     else:
         print("No Path Found!")

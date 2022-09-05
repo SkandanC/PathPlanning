@@ -63,7 +63,9 @@ class RrtStar:
         index = self.search_goal_parent()
         self.path = self.extract_path(self.vertex[index])
 
-        self.plotting.animation(self.vertex, self.path, "rrt*, N = " + str(self.iter_max))
+        self.plotting.animation(
+            self.vertex, self.path, f"rrt*, N = {str(self.iter_max)}"
+        )
 
     def new_state(self, node_start, node_goal):
         dist, theta = self.get_distance_and_angle(node_start, node_goal)
@@ -91,9 +93,9 @@ class RrtStar:
 
     def search_goal_parent(self):
         dist_list = [math.hypot(n.x - self.s_goal.x, n.y - self.s_goal.y) for n in self.vertex]
-        node_index = [i for i in range(len(dist_list)) if dist_list[i] <= self.step_len]
-
-        if len(node_index) > 0:
+        if node_index := [
+            i for i in range(len(dist_list)) if dist_list[i] <= self.step_len
+        ]:
             cost_list = [dist_list[i] + self.cost(self.vertex[i]) for i in node_index
                          if not self.utils.is_collision(self.vertex[i], self.s_goal)]
             return node_index[int(np.argmin(cost_list))]
@@ -119,10 +121,12 @@ class RrtStar:
         r = min(self.search_radius * math.sqrt((math.log(n) / n)), self.step_len)
 
         dist_table = [math.hypot(nd.x - node_new.x, nd.y - node_new.y) for nd in self.vertex]
-        dist_table_index = [ind for ind in range(len(dist_table)) if dist_table[ind] <= r and
-                            not self.utils.is_collision(node_new, self.vertex[ind])]
-
-        return dist_table_index
+        return [
+            ind
+            for ind in range(len(dist_table))
+            if dist_table[ind] <= r
+            and not self.utils.is_collision(node_new, self.vertex[ind])
+        ]
 
     @staticmethod
     def nearest_neighbor(node_list, n):

@@ -178,11 +178,7 @@ def interpolate(ind, l, m, maxc, ox, oy, oyaw, px, py, pyaw, directions):
     elif m == "R":
         pyaw[ind] = oyaw - l
 
-    if l > 0.0:
-        directions[ind] = 1
-    else:
-        directions[ind] = -1
-
+    directions[ind] = 1 if l > 0.0 else -1
     return px, py, pyaw, directions
 
 
@@ -195,32 +191,16 @@ def generate_local_course(L, lengths, mode, maxc, step_size):
     directions = [0 for _ in range(point_num)]
     ind = 1
 
-    if lengths[0] > 0.0:
-        directions[0] = 1
-    else:
-        directions[0] = -1
-
-    if lengths[0] > 0.0:
-        d = step_size
-    else:
-        d = -step_size
-
+    directions[0] = 1 if lengths[0] > 0.0 else -1
+    d = step_size if lengths[0] > 0.0 else -step_size
     ll = 0.0
 
     for m, l, i in zip(mode, lengths, range(len(mode))):
-        if l > 0.0:
-            d = step_size
-        else:
-            d = -step_size
-
+        d = step_size if l > 0.0 else -step_size
         ox, oy, oyaw = px[ind], py[ind], pyaw[ind]
 
         ind -= 1
-        if i >= 1 and (lengths[i - 1] * lengths[i]) > 0:
-            pd = -d - ll
-        else:
-            pd = d - ll
-
+        pd = -d - ll if i >= 1 and (lengths[i - 1] * lengths[i]) > 0 else d - ll
         while abs(pd) <= abs(l):
             ind += 1
             px, py, pyaw, directions = \

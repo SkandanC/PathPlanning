@@ -62,10 +62,12 @@ class DStar:
             path = [self.s_start]
 
             while s_curr != self.s_goal:
-                s_list = {}
+                s_list = {
+                    s: self.g[s] + self.cost(s_curr, s)
+                    for s in self.get_neighbor(s_curr)
+                }
 
-                for s in self.get_neighbor(s_curr):
-                    s_list[s] = self.g[s] + self.cost(s_curr, s)
+
                 s_curr = min(s_list, key=s_list.get)
                 path.append(s_curr)
 
@@ -181,7 +183,7 @@ class DStar:
     def get_neighbor(self, s):
         nei_list = set()
         for u in self.u_set:
-            s_next = tuple([s[i] + u[i] for i in range(2)])
+            s_next = tuple(s[i] + u[i] for i in range(2))
             if s_next not in self.obs:
                 nei_list.add(s_next)
 
@@ -196,11 +198,13 @@ class DStar:
         path = [self.s_start]
         s = self.s_start
 
-        for k in range(100):
-            g_list = {}
-            for x in self.get_neighbor(s):
-                if not self.is_collision(s, x):
-                    g_list[x] = self.g[x]
+        for _ in range(100):
+            g_list = {
+                x: self.g[x]
+                for x in self.get_neighbor(s)
+                if not self.is_collision(s, x)
+            }
+
             s = min(g_list, key=g_list.get)
             path.append(s)
             if s == self.s_goal:

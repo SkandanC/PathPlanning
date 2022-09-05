@@ -4,6 +4,7 @@
 """
 @author: yue qi
 """
+
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import defaultdict
@@ -11,7 +12,10 @@ from collections import defaultdict
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Search_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Search_based_Planning/"
+)
+
 from Search_3D.env3D import env
 from Search_3D.utils3D import getDist, getRay, g_Space, Heuristic, getNearest, isCollide, cost, children, heuristic_fun
 from Search_3D.plot_util3D import visualization
@@ -21,14 +25,14 @@ import queue
 class Weighted_A_star(object):
     def __init__(self,resolution=0.5):
         self.Alldirec = {(1, 0, 0): 1, (0, 1, 0): 1, (0, 0, 1): 1, \
-                        (-1, 0, 0): 1, (0, -1, 0): 1, (0, 0, -1): 1, \
-                        (1, 1, 0): np.sqrt(2), (1, 0, 1): np.sqrt(2), (0, 1, 1): np.sqrt(2), \
-                        (-1, -1, 0): np.sqrt(2), (-1, 0, -1): np.sqrt(2), (0, -1, -1): np.sqrt(2), \
-                        (1, -1, 0): np.sqrt(2), (-1, 1, 0): np.sqrt(2), (1, 0, -1): np.sqrt(2), \
-                        (-1, 0, 1): np.sqrt(2), (0, 1, -1): np.sqrt(2), (0, -1, 1): np.sqrt(2), \
-                        (1, 1, 1): np.sqrt(3), (-1, -1, -1) : np.sqrt(3), \
-                        (1, -1, -1): np.sqrt(3), (-1, 1, -1): np.sqrt(3), (-1, -1, 1): np.sqrt(3), \
-                        (1, 1, -1): np.sqrt(3), (1, -1, 1): np.sqrt(3), (-1, 1, 1): np.sqrt(3)}
+                            (-1, 0, 0): 1, (0, -1, 0): 1, (0, 0, -1): 1, \
+                            (1, 1, 0): np.sqrt(2), (1, 0, 1): np.sqrt(2), (0, 1, 1): np.sqrt(2), \
+                            (-1, -1, 0): np.sqrt(2), (-1, 0, -1): np.sqrt(2), (0, -1, -1): np.sqrt(2), \
+                            (1, -1, 0): np.sqrt(2), (-1, 1, 0): np.sqrt(2), (1, 0, -1): np.sqrt(2), \
+                            (-1, 0, 1): np.sqrt(2), (0, 1, -1): np.sqrt(2), (0, -1, 1): np.sqrt(2), \
+                            (1, 1, 1): np.sqrt(3), (-1, -1, -1) : np.sqrt(3), \
+                            (1, -1, -1): np.sqrt(3), (-1, 1, -1): np.sqrt(3), (-1, -1, 1): np.sqrt(3), \
+                            (1, 1, -1): np.sqrt(3), (1, -1, 1): np.sqrt(3), (-1, 1, 1): np.sqrt(3)}
         self.env = env(resolution = resolution)
         self.settings = 'NonCollisionChecking'
         self.start, self.goal = tuple(self.env.start), tuple(self.env.goal)
@@ -47,7 +51,7 @@ class Weighted_A_star(object):
         self.OPEN2.put(xt, self.g[xt] + heuristic_fun(self,xt,x0)) # item, priority = g + h
         self.ind = 0
         while not self.CLOSED1.intersection(self.CLOSED2): # while xt not reached and open is not empty
-            xi1, xi2 = self.OPEN1.get(), self.OPEN2.get() 
+            xi1, xi2 = self.OPEN1.get(), self.OPEN2.get()
             self.CLOSED1.add(xi1) # add the point in CLOSED set
             self.CLOSED2.add(xi2)
             self.V.append(xi1)
@@ -56,7 +60,8 @@ class Weighted_A_star(object):
             allchild1,  allchild2 = children(self,xi1), children(self,xi2)
             self.evaluation(allchild1,xi1,conf=1)
             self.evaluation(allchild2,xi2,conf=2)
-            if self.ind % 100 == 0: print('iteration number = '+ str(self.ind))
+            if self.ind % 100 == 0:
+                print(f'iteration number = {str(self.ind)}')
             self.ind += 1
         self.common = self.CLOSED1.intersection(self.CLOSED2)
         self.done = True
@@ -66,30 +71,24 @@ class Weighted_A_star(object):
 
     def evaluation(self, allchild, xi, conf):
         for xj in allchild:
-            if conf == 1:
-                if xj not in self.CLOSED1:
-                    if xj not in self.g:
-                        self.g[xj] = np.inf
-                    else:
-                        pass
-                    gi = self.g[xi]
-                    a = gi + cost(self,xi,xj)
-                    if a < self.g[xj]:
-                        self.g[xj] = a
-                        self.Parent1[xj] = xi
-                        self.OPEN1.put(xj, a+1*heuristic_fun(self,xj,self.goal))
-            if conf == 2:
-                if xj not in self.CLOSED2:
-                    if xj not in self.g:
-                        self.g[xj] = np.inf
-                    else:
-                        pass
-                    gi = self.g[xi]
-                    a = gi + cost(self,xi,xj)
-                    if a < self.g[xj]:
-                        self.g[xj] = a
-                        self.Parent2[xj] = xi
-                        self.OPEN2.put(xj, a+1*heuristic_fun(self,xj,self.start))
+            if conf == 1 and xj not in self.CLOSED1:
+                if xj not in self.g:
+                    self.g[xj] = np.inf
+                gi = self.g[xi]
+                a = gi + cost(self,xi,xj)
+                if a < self.g[xj]:
+                    self.g[xj] = a
+                    self.Parent1[xj] = xi
+                    self.OPEN1.put(xj, a+1*heuristic_fun(self,xj,self.goal))
+            if conf == 2 and xj not in self.CLOSED2:
+                if xj not in self.g:
+                    self.g[xj] = np.inf
+                gi = self.g[xi]
+                a = gi + cost(self,xi,xj)
+                if a < self.g[xj]:
+                    self.g[xj] = a
+                    self.Parent2[xj] = xi
+                    self.OPEN2.put(xj, a+1*heuristic_fun(self,xj,self.start))
             
     def path(self):
         # TODO: fix path

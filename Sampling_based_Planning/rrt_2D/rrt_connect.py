@@ -44,7 +44,7 @@ class RrtConnect:
         self.obs_boundary = self.env.obs_boundary
 
     def planning(self):
-        for i in range(self.iter_max):
+        for _ in range(self.iter_max):
             node_rand = self.generate_random_node(self.s_goal, self.goal_sample_rate)
             node_near = self.nearest_neighbor(self.V1, node_rand)
             node_new = self.new_state(node_near, node_rand)
@@ -59,12 +59,13 @@ class RrtConnect:
 
                     while True:
                         node_new_prim2 = self.new_state(node_new_prim, node_new)
-                        if node_new_prim2 and not self.utils.is_collision(node_new_prim2, node_new_prim):
-                            self.V2.append(node_new_prim2)
-                            node_new_prim = self.change_node(node_new_prim, node_new_prim2)
-                        else:
+                        if not node_new_prim2 or self.utils.is_collision(
+                            node_new_prim2, node_new_prim
+                        ):
                             break
 
+                        self.V2.append(node_new_prim2)
+                        node_new_prim = self.change_node(node_new_prim, node_new_prim2)
                         if self.is_node_same(node_new_prim, node_new):
                             break
 
@@ -87,11 +88,7 @@ class RrtConnect:
 
     @staticmethod
     def is_node_same(node_new_prim, node_new):
-        if node_new_prim.x == node_new.x and \
-                node_new_prim.y == node_new.y:
-            return True
-
-        return False
+        return node_new_prim.x == node_new.x and node_new_prim.y == node_new.y
 
     def generate_random_node(self, sample_goal, goal_sample_rate):
         delta = self.utils.delta

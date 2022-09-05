@@ -78,10 +78,7 @@ class Plotting:
         if self.xG in visited:
             visited.remove(self.xG)
 
-        count = 0
-
-        for x in visited:
-            count += 1
+        for count, x in enumerate(visited, start=1):
             plt.plot(x[0], x[1], color=cl, marker='o')
             plt.gcf().canvas.mpl_connect('key_release_event',
                                          lambda event: [exit(0) if event.key == 'escape' else None])
@@ -151,15 +148,15 @@ class Plotting:
 
     @staticmethod
     def color_list_2():
-        cl = ['silver',
-              'steelblue',
-              'dimgray',
-              'cornflowerblue',
-              'dodgerblue',
-              'royalblue',
-              'plum',
-              'mediumslateblue',
-              'mediumpurple',
-              'blueviolet',
-              ]
-        return cl
+        return [
+            'silver',
+            'steelblue',
+            'dimgray',
+            'cornflowerblue',
+            'dodgerblue',
+            'royalblue',
+            'plum',
+            'mediumslateblue',
+            'mediumpurple',
+            'blueviolet',
+        ]

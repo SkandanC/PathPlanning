@@ -27,26 +27,34 @@ class QuinticPolynomial:
         self.a5 = X[2]
 
     def calc_xt(self, t):
-        xt = self.a0 + self.a1 * t + self.a2 * t ** 2 + \
-                self.a3 * t ** 3 + self.a4 * t ** 4 + self.a5 * t ** 5
-
-        return xt
+        return (
+            self.a0
+            + self.a1 * t
+            + self.a2 * t**2
+            + self.a3 * t**3
+            + self.a4 * t**4
+            + self.a5 * t**5
+        )
 
     def calc_dxt(self, t):
-        dxt = self.a1 + 2 * self.a2 * t + \
-            3 * self.a3 * t ** 2 + 4 * self.a4 * t ** 3 + 5 * self.a5 * t ** 4
-
-        return dxt
+        return (
+            self.a1
+            + 2 * self.a2 * t
+            + 3 * self.a3 * t**2
+            + 4 * self.a4 * t**3
+            + 5 * self.a5 * t**4
+        )
 
     def calc_ddxt(self, t):
-        ddxt = 2 * self.a2 + 6 * self.a3 * t + 12 * self.a4 * t ** 2 + 20 * self.a5 * t ** 3
-
-        return ddxt
+        return (
+            2 * self.a2
+            + 6 * self.a3 * t
+            + 12 * self.a4 * t**2
+            + 20 * self.a5 * t**3
+        )
 
     def calc_dddxt(self, t):
-        dddxt = 6 * self.a3 + 24 * self.a4 * t + 60 * self.a5 * t ** 2
-
-        return dddxt
+        return 6 * self.a3 + 24 * self.a4 * t + 60 * self.a5 * t ** 2
 
 
 class Trajectory:

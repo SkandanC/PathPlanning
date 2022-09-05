@@ -60,22 +60,18 @@ class RTAAStar:
             self.path.append(path_k)
 
     def cal_h_value(self, OPEN, CLOSED, g_table, PARENT):
-        v_open = {}
-        h_value = {}
-        for (_, x) in OPEN.enumerate():
-            v_open[x] = g_table[PARENT[x]] + 1 + self.h_table[x]
+        v_open = {
+            x: g_table[PARENT[x]] + 1 + self.h_table[x]
+            for _, x in OPEN.enumerate()
+        }
+
         s_open = min(v_open, key=v_open.get)
         f_min = v_open[s_open]
-        for x in CLOSED:
-            h_value[x] = f_min - g_table[x]
-
+        h_value = {x: f_min - g_table[x] for x in CLOSED}
         return s_open, h_value
 
     def iteration(self, CLOSED):
-        h_value = {}
-
-        for s in CLOSED:
-            h_value[s] = float("inf")  # initialize h_value of CLOSED nodes
+        h_value = {s: float("inf") for s in CLOSED}
 
         while True:
             h_value_rec = copy.deepcopy(h_value)
@@ -135,7 +131,7 @@ class RTAAStar:
         s_list = set()
 
         for u in self.u_set:
-            s_next = tuple([s[i] + u[i] for i in range(2)])
+            s_next = tuple(s[i] + u[i] for i in range(2))
             if s_next not in self.obs:
                 s_list.add(s_next)
 
@@ -146,10 +142,7 @@ class RTAAStar:
         s = s_start
 
         while True:
-            h_list = {}
-            for s_n in self.get_neighbor(s):
-                if s_n in h_value:
-                    h_list[s_n] = h_value[s_n]
+            h_list = {s_n: h_value[s_n] for s_n in self.get_neighbor(s) if s_n in h_value}
             s_key = max(h_list, key=h_list.get)  # move to the smallest node with min h_value
             path.append(s_key)  # generate path
             s = s_key  # use end of this iteration as the start of next

@@ -29,10 +29,10 @@ class DStar:
         self.fig = plt.figure()
 
         self.OPEN = set()
-        self.t = dict()
-        self.PARENT = dict()
-        self.h = dict()
-        self.k = dict()
+        self.t = {}
+        self.PARENT = {}
+        self.h = {}
+        self.k = {}
         self.path = []
         self.visited = set()
         self.count = 0
@@ -115,7 +115,7 @@ class DStar:
         if k_old < self.h[s]:
             for s_n in self.get_neighbor(s):
                 if self.h[s_n] <= k_old and \
-                        self.h[s] > self.h[s_n] + self.cost(s_n, s):
+                            self.h[s] > self.h[s_n] + self.cost(s_n, s):
 
                     # update h_value and choose parent
                     self.PARENT[s] = s_n
@@ -125,8 +125,8 @@ class DStar:
         if k_old == self.h[s]:
             for s_n in self.get_neighbor(s):
                 if self.t[s_n] == 'NEW' or \
-                        (self.PARENT[s_n] == s and self.h[s_n] != self.h[s] + self.cost(s, s_n)) or \
-                        (self.PARENT[s_n] != s and self.h[s_n] > self.h[s] + self.cost(s, s_n)):
+                            (self.PARENT[s_n] == s and self.h[s_n] != self.h[s] + self.cost(s, s_n)) or \
+                            (self.PARENT[s_n] != s and self.h[s_n] > self.h[s] + self.cost(s, s_n)):
 
                     # Condition:
                     # 1) t[s_n] == 'NEW': not visited
@@ -137,27 +137,25 @@ class DStar:
         else:
             for s_n in self.get_neighbor(s):
                 if self.t[s_n] == 'NEW' or \
-                        (self.PARENT[s_n] == s and self.h[s_n] != self.h[s] + self.cost(s, s_n)):
+                            (self.PARENT[s_n] == s and self.h[s_n] != self.h[s] + self.cost(s, s_n)):
 
                     # Condition:
                     # 1) t[s_n] == 'NEW': not visited
                     # 2) s_n's parent: cost reduction
                     self.PARENT[s_n] = s
                     self.insert(s_n, self.h[s] + self.cost(s, s_n))
-                else:
-                    if self.PARENT[s_n] != s and \
-                            self.h[s_n] > self.h[s] + self.cost(s, s_n):
+                elif self.PARENT[s_n] != s and \
+                                self.h[s_n] > self.h[s] + self.cost(s, s_n):
 
-                        # Condition: LOWER happened in OPEN set (s), s should be explored again
-                        self.insert(s, self.h[s])
-                    else:
-                        if self.PARENT[s_n] != s and \
-                                self.h[s] > self.h[s_n] + self.cost(s_n, s) and \
-                                self.t[s_n] == 'CLOSED' and \
-                                self.h[s_n] > k_old:
+                    # Condition: LOWER happened in OPEN set (s), s should be explored again
+                    self.insert(s, self.h[s])
+                elif self.PARENT[s_n] != s and \
+                                    self.h[s] > self.h[s_n] + self.cost(s_n, s) and \
+                                    self.t[s_n] == 'CLOSED' and \
+                                    self.h[s_n] > k_old:
 
-                            # Condition: LOWER happened in CLOSED set (s_n), s_n should be explored again
-                            self.insert(s_n, self.h[s_n])
+                    # Condition: LOWER happened in CLOSED set (s_n), s_n should be explored again
+                    self.insert(s_n, self.h[s_n])
 
         return self.get_k_min()
 
@@ -167,10 +165,7 @@ class DStar:
         :return: state
         """
 
-        if not self.OPEN:
-            return None
-
-        return min(self.OPEN, key=lambda x: self.k[x])
+        return min(self.OPEN, key=lambda x: self.k[x]) if self.OPEN else None
 
     def get_k_min(self):
         """
@@ -178,10 +173,7 @@ class DStar:
         :return: k value
         """
 
-        if not self.OPEN:
-            return -1
-
-        return min([self.k[x] for x in self.OPEN])
+        return min(self.k[x] for x in self.OPEN) if self.OPEN else -1
 
     def insert(self, s, h_new):
         """
@@ -237,7 +229,7 @@ class DStar:
         nei_list = set()
 
         for u in self.u_set:
-            s_next = tuple([s[i] + u[i] for i in range(2)])
+            s_next = tuple(s[i] + u[i] for i in range(2))
             if s_next not in self.obs:
                 nei_list.add(s_next)
 

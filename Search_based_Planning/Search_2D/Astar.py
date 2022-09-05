@@ -29,8 +29,8 @@ class AStar:
 
         self.OPEN = []  # priority queue / OPEN set
         self.CLOSED = []  # CLOSED set / VISITED order
-        self.PARENT = dict()  # recorded parent
-        self.g = dict()  # cost to come
+        self.PARENT = {}
+        self.g = {}
 
     def searching(self):
         """

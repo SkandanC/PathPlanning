@@ -3,6 +3,7 @@
 This is rrt connect implementation for 3D
 @author: yue qi
 """
+
 import numpy as np
 from numpy.matlib import repmat
 from collections import defaultdict
@@ -12,7 +13,10 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Sampling_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Sampling_based_Planning/"
+)
+
 
 from rrt_3D.env3D import env
 from rrt_3D.utils3D import getDist, sampleFree, nearest, steer, isCollide, near, visualization, cost, path, edgeset
@@ -21,9 +25,8 @@ from rrt_3D.plot_util3D import set_axes_equal, draw_block_list, draw_Spheres, dr
 
 class Tree():
     def __init__(self, node):
-        self.V = []
         self.Parent = {}
-        self.V.append(node)
+        self.V = [node]
         # self.Parent[node] = None
 
     def add_vertex(self, node):
@@ -51,7 +54,7 @@ class rrt_connect():
         self.x0, self.xt = tuple(self.env.start), tuple(self.env.goal)
         self.qnew = None
         self.done = False
-        
+
         self.ind = 0
         self.fig = plt.figure(figsize=(10, 8))
 
@@ -59,7 +62,7 @@ class rrt_connect():
 #----------Normal RRT algorithm
     def BUILD_RRT(self, qinit):
         tree = Tree(qinit)
-        for k in range(self.maxiter):
+        for _ in range(self.maxiter):
             qrand = self.RANDOM_CONFIG()
             self.EXTEND(tree, qrand)
         return tree
@@ -71,10 +74,7 @@ class rrt_connect():
         if self.NEW_CONFIG(q, qnear, qnew, dist=None):
             tree.add_vertex(qnew)
             tree.add_edge(qnear, qnew)
-            if qnew == q:
-                return 'Reached'
-            else:
-                return 'Advanced'
+            return 'Reached' if qnew == q else 'Advanced'
         return 'Trapped'
 
     def NEAREST_NEIGHBOR(self, q, tree):
@@ -137,46 +137,53 @@ class rrt_connect():
         while True:
             patha.append((tree_a.Parent[qnew], qnew))
             qnew = tree_a.Parent[qnew]
-            if qnew == self.qinit or qnew == self.qgoal:
+            if qnew in [self.qinit, self.qgoal]:
                 break
         qnew = self.qnew
         while True:
             pathb.append((tree_b.Parent[qnew], qnew))
             qnew = tree_b.Parent[qnew]
-            if qnew == self.qinit or qnew == self.qgoal:
+            if qnew in [self.qinit, self.qgoal]:
                 break
         return patha + pathb
 
 #----------RRT connect algorithm        
     def visualization(self, tree_a, tree_b, index):
-        if (index % 20 == 0 and index != 0) or self.done:
-            # a_V = np.array(tree_a.V)
-            # b_V = np.array(tree_b.V)
-            Path = self.Path
-            start = self.env.start
-            goal = self.env.goal
-            a_edges, b_edges = [], []
-            for i in tree_a.Parent:
-                a_edges.append([i,tree_a.Parent[i]])
-            for i in tree_b.Parent:
-                b_edges.append([i,tree_b.Parent[i]])
-            ax = plt.subplot(111, projection='3d')
-            ax.view_init(elev=90., azim=0.)
-            ax.clear()
-            draw_Spheres(ax, self.env.balls)
-            draw_block_list(ax, self.env.blocks)
-            if self.env.OBB is not None:
-                draw_obb(ax, self.env.OBB)
-            draw_block_list(ax, np.array([self.env.boundary]), alpha=0)
-            draw_line(ax, a_edges, visibility=0.75, color='g')
-            draw_line(ax, b_edges, visibility=0.75, color='y')
-            draw_line(ax, Path, color='r')
-            ax.plot(start[0:1], start[1:2], start[2:], 'go', markersize=7, markeredgecolor='k')
-            ax.plot(goal[0:1], goal[1:2], goal[2:], 'ro', markersize=7, markeredgecolor='k')
-            set_axes_equal(ax)
-            make_transparent(ax)
-            ax.set_axis_off()
-            plt.pause(0.0001)
+        if (index % 20 != 0 or index == 0) and not self.done:
+            return
+        # a_V = np.array(tree_a.V)
+        # b_V = np.array(tree_b.V)
+        Path = self.Path
+        start = self.env.start
+        goal = self.env.goal
+        a_edges, b_edges = [], []
+        a_edges.extend([i,tree_a.Parent[i]] for i in tree_a.Parent)
+        b_edges.extend([i,tree_b.Parent[i]] for i in tree_b.Parent)
+        ax = plt.subplot(111, projection='3d')
+        ax.view_init(elev=90., azim=0.)
+        ax.clear()
+        draw_Spheres(ax, self.env.balls)
+        draw_block_list(ax, self.env.blocks)
+        if self.env.OBB is not None:
+            draw_obb(ax, self.env.OBB)
+        draw_block_list(ax, np.array([self.env.boundary]), alpha=0)
+        draw_line(ax, a_edges, visibility=0.75, color='g')
+        draw_line(ax, b_edges, visibility=0.75, color='y')
+        draw_line(ax, Path, color='r')
+        ax.plot(
+            start[:1],
+            start[1:2],
+            start[2:],
+            'go',
+            markersize=7,
+            markeredgecolor='k',
+        )
+
+        ax.plot(goal[:1], goal[1:2], goal[2:], 'ro', markersize=7, markeredgecolor='k')
+        set_axes_equal(ax)
+        make_transparent(ax)
+        ax.set_axis_off()
+        plt.pause(0.0001)
 
 
 
@@ -184,4 +191,4 @@ if __name__ == '__main__':
     p = rrt_connect()
     starttime = time.time()
     p.RRT_CONNECT_PLANNER(p.qinit, p.qgoal)
-    print('time used = ' + str(time.time() - starttime))
+    print(f'time used = {str(time.time() - starttime)}')

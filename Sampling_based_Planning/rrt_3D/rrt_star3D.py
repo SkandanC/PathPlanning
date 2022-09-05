@@ -2,6 +2,7 @@
 This is rrt star code for 3D
 @author: yue qi
 """
+
 import numpy as np
 from numpy.matlib import repmat
 from collections import defaultdict
@@ -11,7 +12,10 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Sampling_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Sampling_based_Planning/"
+)
+
 from rrt_3D.env3D import env
 from rrt_3D.utils3D import getDist, sampleFree, nearest, steer, isCollide, near, visualization, cost, path
 
@@ -21,7 +25,6 @@ class rrtstar():
         self.env = env()
 
         self.Parent = {}
-        self.V = []
         # self.E = edgeset()
         self.COST = {}
 
@@ -35,7 +38,7 @@ class rrtstar():
         self.x0 = tuple(self.env.start)
         self.xt = tuple(self.env.goal)
 
-        self.V.append(self.x0)
+        self.V = [self.x0]
         self.ind = 0
     def wireup(self,x,y):
         # self.E.add_edge([s,y]) # add edge
@@ -94,8 +97,8 @@ class rrtstar():
             self.ind += 1
         # max sample reached
         self.reached()
-        print('time used = ' + str(time.time()-starttime))
-        print('Total distance = '+str(self.D))
+        print(f'time used = {str(time.time() - starttime)}')
+        print(f'Total distance = {str(self.D)}')
         visualization(self)
         plt.show()
         

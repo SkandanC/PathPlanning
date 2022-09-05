@@ -29,10 +29,10 @@ class BidirectionalAStar:
         self.OPEN_back = []  # OPEN set for backward searching
         self.CLOSED_fore = []  # CLOSED set for forward
         self.CLOSED_back = []  # CLOSED set for backward
-        self.PARENT_fore = dict()  # recorded parent for forward
-        self.PARENT_back = dict()  # recorded parent for backward
-        self.g_fore = dict()  # cost to come for forward
-        self.g_back = dict()  # cost to come for backward
+        self.PARENT_fore = {}
+        self.PARENT_back = {}
+        self.g_fore = {}
+        self.g_back = {}
 
     def init(self):
         """

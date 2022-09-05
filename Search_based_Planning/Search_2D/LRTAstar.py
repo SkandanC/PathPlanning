@@ -63,13 +63,11 @@ class LrtAStarN:
         s = s_start
 
         while True:
-            h_list = {}
+            h_list = {
+                s_n: h_value[s_n] if s_n in h_value else self.h_table[s_n]
+                for s_n in self.get_neighbor(s)
+            }
 
-            for s_n in self.get_neighbor(s):
-                if s_n in h_value:
-                    h_list[s_n] = h_value[s_n]
-                else:
-                    h_list[s_n] = self.h_table[s_n]
 
             s_key = min(h_list, key=h_list.get)  # move to the smallest node with min h_value
             path.append(s_key)  # generate path
@@ -79,10 +77,7 @@ class LrtAStarN:
                 return s_key, path
 
     def iteration(self, CLOSED):
-        h_value = {}
-
-        for s in CLOSED:
-            h_value[s] = float("inf")  # initialize h_value of CLOSED nodes
+        h_value = {s: float("inf") for s in CLOSED}
 
         while True:
             h_value_rec = copy.deepcopy(h_value)
@@ -142,7 +137,7 @@ class LrtAStarN:
         s_list = []
 
         for u in self.u_set:
-            s_next = tuple([s[i] + u[i] for i in range(2)])
+            s_next = tuple(s[i] + u[i] for i in range(2))
             if s_next not in self.obs:
                 s_list.append(s_next)
 

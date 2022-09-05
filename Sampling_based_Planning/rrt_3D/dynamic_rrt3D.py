@@ -2,6 +2,7 @@
 This is dynamic rrt code for 3D
 @author: yue qi
 """
+
 import numpy as np
 import time
 import matplotlib.pyplot as plt
@@ -9,7 +10,10 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Sampling_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Sampling_based_Planning/"
+)
+
 from rrt_3D.env3D import env
 from rrt_3D.utils3D import getDist, sampleFree, nearest, steer, isCollide
 from rrt_3D.plot_util3D import set_axes_equal, draw_block_list, draw_Spheres, draw_obb, draw_line, make_transparent
@@ -44,16 +48,14 @@ class dynamic_rrt_3D:
 
     def TrimRRT(self):
         S = []
-        i = 1
         print('trimming...')
-        while i < len(self.V):
+        for i in range(1, len(self.V)):
             qi = self.V[i]
             qp = self.Parent[qi]
             if self.flag[qp] == 'Invalid':
                 self.flag[qi] = 'Invalid'
             if self.flag[qi] != 'Invalid':
                 S.append(qi)
-            i += 1
         self.CreateTreeFromNodes(S)
 
     def InvalidateNodes(self, obstacle):
@@ -89,10 +91,7 @@ class dynamic_rrt_3D:
     def ChooseTarget(self):
         # return the goal, or randomly choose a state in the waypoints based on probs
         p = np.random.uniform()
-        if len(self.V) == 1:
-            i = 0
-        else:
-            i = np.random.randint(0, high=len(self.V) - 1)
+        i = 0 if len(self.V) == 1 else np.random.randint(0, high=len(self.V) - 1)
         if 0 < p < self.GoalProb:
             return self.xt
         elif self.GoalProb < p < self.GoalProb + self.WayPointProb:
@@ -101,9 +100,7 @@ class dynamic_rrt_3D:
             return tuple(self.RandomState())
 
     def RandomState(self):
-        # generate a random, obstacle free state
-        xrand = sampleFree(self, bias=0)
-        return xrand
+        return sampleFree(self, bias=0)
 
     def AddNode(self, nearest, extended):
         self.V.append(extended)
@@ -172,7 +169,7 @@ class dynamic_rrt_3D:
     def CreateTreeFromNodes(self, Nodes):
         print('creating tree...')
         # self.Parent = {node: self.Parent[node] for node in Nodes}
-        self.V = [node for node in Nodes]
+        self.V = list(Nodes)
         self.Edge = {(node, self.Parent[node]) for node in Nodes}
         # if self.invalid:
         #     del self.Parent[self.xt]
@@ -199,39 +196,48 @@ class dynamic_rrt_3D:
 
     # --------Visualization specialized for dynamic RRT
     def visualization(self):
-        if self.ind % 100 == 0 or self.done:
-            V = np.array(self.V)
-            Path = np.array(self.Path)
-            start = self.env.start
-            goal = self.env.goal
-            # edges = []
-            # for i in self.Parent:
-            #     edges.append([i, self.Parent[i]])
-            edges = np.array([list(i) for i in self.Edge])
-            ax = plt.subplot(111, projection='3d')
-            # ax.view_init(elev=0.+ 0.03*initparams.ind/(2*np.pi), azim=90 + 0.03*initparams.ind/(2*np.pi))
-            # ax.view_init(elev=0., azim=90.)
-            ax.view_init(elev=90., azim=0.)
-            ax.clear()
-            # drawing objects
-            draw_Spheres(ax, self.env.balls)
-            draw_block_list(ax, self.env.blocks)
-            if self.env.OBB is not None:
-                draw_obb(ax, self.env.OBB)
-            draw_block_list(ax, np.array([self.env.boundary]), alpha=0)
-            draw_line(ax, edges, visibility=0.75, color='g')
-            draw_line(ax, Path, color='r')
+        if self.ind % 100 != 0 and not self.done:
+            return
+        V = np.array(self.V)
+        Path = np.array(self.Path)
+        start = self.env.start
+        goal = self.env.goal
+        # edges = []
+        # for i in self.Parent:
+        #     edges.append([i, self.Parent[i]])
+        edges = np.array([list(i) for i in self.Edge])
+        ax = plt.subplot(111, projection='3d')
+        # ax.view_init(elev=0.+ 0.03*initparams.ind/(2*np.pi), azim=90 + 0.03*initparams.ind/(2*np.pi))
+        # ax.view_init(elev=0., azim=90.)
+        ax.view_init(elev=90., azim=0.)
+        ax.clear()
+        # drawing objects
+        draw_Spheres(ax, self.env.balls)
+        draw_block_list(ax, self.env.blocks)
+        if self.env.OBB is not None:
+            draw_obb(ax, self.env.OBB)
+        draw_block_list(ax, np.array([self.env.boundary]), alpha=0)
+        draw_line(ax, edges, visibility=0.75, color='g')
+        draw_line(ax, Path, color='r')
             # if len(V) > 0:
             #     ax.scatter3D(V[:, 0], V[:, 1], V[:, 2], s=2, color='g', )
-            ax.plot(start[0:1], start[1:2], start[2:], 'go', markersize=7, markeredgecolor='k')
-            ax.plot(goal[0:1], goal[1:2], goal[2:], 'ro', markersize=7, markeredgecolor='k')
-            # adjust the aspect ratio
-            set_axes_equal(ax)
-            make_transparent(ax)
-            # plt.xlabel('s')
-            # plt.ylabel('y')
-            ax.set_axis_off()
-            plt.pause(0.0001)
+        ax.plot(
+            start[:1],
+            start[1:2],
+            start[2:],
+            'go',
+            markersize=7,
+            markeredgecolor='k',
+        )
+
+        ax.plot(goal[:1], goal[1:2], goal[2:], 'ro', markersize=7, markeredgecolor='k')
+        # adjust the aspect ratio
+        set_axes_equal(ax)
+        make_transparent(ax)
+        # plt.xlabel('s')
+        # plt.ylabel('y')
+        ax.set_axis_off()
+        plt.pause(0.0001)
 
 
 if __name__ == '__main__':

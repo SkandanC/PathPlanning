@@ -68,9 +68,7 @@ class DubinsRRTStar:
 
             if new_node and not self.is_collision(new_node):
                 near_indexes = self.Near(self.V, new_node)
-                new_node = self.choose_parent(new_node, near_indexes)
-
-                if new_node:
+                if new_node := self.choose_parent(new_node, near_indexes):
                     self.V.append(new_node)
                     self.rewire(new_node, near_indexes)
 
@@ -112,8 +110,11 @@ class DubinsRRTStar:
         path = [[self.s_goal.x, self.s_goal.y]]
         node = self.V[goal_index]
         while node.parent:
-            for (ix, iy) in zip(reversed(node.path_x), reversed(node.path_y)):
-                path.append([ix, iy])
+            path.extend(
+                [ix, iy]
+                for ix, iy in zip(reversed(node.path_x), reversed(node.path_y))
+            )
+
             node = node.parent
         path.append([self.s_start.x, self.s_start.y])
         return path
@@ -136,12 +137,8 @@ class DubinsRRTStar:
         if not safe_goal_inds:
             return None
 
-        min_cost = min([self.V[i].cost for i in safe_goal_inds])
-        for i in safe_goal_inds:
-            if self.V[i].cost == min_cost:
-                return i
-
-        return None
+        min_cost = min(self.V[i].cost for i in safe_goal_inds)
+        return next((i for i in safe_goal_inds if self.V[i].cost == min_cost), None)
 
     def rewire(self, new_node, near_inds):
         for i in near_inds:
@@ -202,9 +199,7 @@ class DubinsRRTStar:
         r = min(self.search_radius * math.sqrt((math.log(n)) / n), self.step_len)
 
         dist_table = [(nd.x - node.x) ** 2 + (nd.y - node.y) ** 2 for nd in nodelist]
-        node_near_ind = [ind for ind in range(len(dist_table)) if dist_table[ind] <= r ** 2]
-
-        return node_near_ind
+        return [ind for ind in range(len(dist_table)) if dist_table[ind] <= r ** 2]
 
     def Steer(self, node_start, node_end):
         sx, sy, syaw = node_start.x, node_start.y, node_start.yaw
@@ -290,17 +285,15 @@ class DubinsRRTStar:
 
     @staticmethod
     def obs_circle():
-        obs_cir = [
+        return [
             [10, 10, 3],
             [15, 22, 3],
             [22, 8, 2.5],
             [26, 16, 2],
             [37, 10, 3],
             [37, 23, 3],
-            [45, 15, 2]
+            [45, 15, 2],
         ]
-
-        return obs_cir
 
 
 def main():

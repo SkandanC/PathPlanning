@@ -5,7 +5,10 @@ import os
 import sys
 from collections import defaultdict
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Search_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Search_based_Planning/"
+)
+
 from Search_3D.env3D import env
 from Search_3D.utils3D import getDist, heuristic_fun, getNearest, isinbound, \
      cost, children, StateSpace
@@ -17,14 +20,14 @@ class D_star_Lite(object):
     # Original version of the D*lite
     def __init__(self, resolution = 1):
         self.Alldirec = {(1, 0, 0): 1, (0, 1, 0): 1, (0, 0, 1): 1, \
-                        (-1, 0, 0): 1, (0, -1, 0): 1, (0, 0, -1): 1, \
-                        (1, 1, 0): np.sqrt(2), (1, 0, 1): np.sqrt(2), (0, 1, 1): np.sqrt(2), \
-                        (-1, -1, 0): np.sqrt(2), (-1, 0, -1): np.sqrt(2), (0, -1, -1): np.sqrt(2), \
-                        (1, -1, 0): np.sqrt(2), (-1, 1, 0): np.sqrt(2), (1, 0, -1): np.sqrt(2), \
-                        (-1, 0, 1): np.sqrt(2), (0, 1, -1): np.sqrt(2), (0, -1, 1): np.sqrt(2), \
-                        (1, 1, 1): np.sqrt(3), (-1, -1, -1) : np.sqrt(3), \
-                        (1, -1, -1): np.sqrt(3), (-1, 1, -1): np.sqrt(3), (-1, -1, 1): np.sqrt(3), \
-                        (1, 1, -1): np.sqrt(3), (1, -1, 1): np.sqrt(3), (-1, 1, 1): np.sqrt(3)}
+                            (-1, 0, 0): 1, (0, -1, 0): 1, (0, 0, -1): 1, \
+                            (1, 1, 0): np.sqrt(2), (1, 0, 1): np.sqrt(2), (0, 1, 1): np.sqrt(2), \
+                            (-1, -1, 0): np.sqrt(2), (-1, 0, -1): np.sqrt(2), (0, -1, -1): np.sqrt(2), \
+                            (1, -1, 0): np.sqrt(2), (-1, 1, 0): np.sqrt(2), (1, 0, -1): np.sqrt(2), \
+                            (-1, 0, 1): np.sqrt(2), (0, 1, -1): np.sqrt(2), (0, -1, 1): np.sqrt(2), \
+                            (1, 1, 1): np.sqrt(3), (-1, -1, -1) : np.sqrt(3), \
+                            (1, -1, -1): np.sqrt(3), (-1, 1, -1): np.sqrt(3), (-1, -1, 1): np.sqrt(3), \
+                            (1, 1, -1): np.sqrt(3), (1, -1, 1): np.sqrt(3), (-1, 1, 1): np.sqrt(3)}
         self.env = env(resolution=resolution)
         #self.X = StateSpace(self.env)
         #self.x0, self.xt = getNearest(self.X, self.env.start), getNearest(self.X, self.env.goal)
@@ -38,12 +41,12 @@ class D_star_Lite(object):
         self.h = {}
         self.OPEN.put(self.xt, self.CalculateKey(self.xt))
         self.CLOSED = set()
-        
+
         # init children set:
         self.CHILDREN = {}
         # init Cost set
         self.COST = defaultdict(lambda: defaultdict(dict))
-        
+
         # for visualization
         self.V = set()  # vertice in closed
         self.ind = 0
@@ -104,7 +107,10 @@ class D_star_Lite(object):
             if u in self.CHILDREN and len(self.CHILDREN[u]) == 0:
                 self.rhs[u] = np.inf
             else:
-                self.rhs[u] = min([self.getcost(s, u) + self.getg(s) for s in self.getchildren(u)])
+                self.rhs[u] = min(
+                    self.getcost(s, u) + self.getg(s) for s in self.getchildren(u)
+                )
+
         # if u is in OPEN, remove it
         self.OPEN.check_remove(u)
         # if rhs(u) not equal to g(u)
@@ -112,15 +118,14 @@ class D_star_Lite(object):
             self.OPEN.put(u, self.CalculateKey(u))
         
     def ComputeShortestPath(self):
-        while self.OPEN.top_key() < self.CalculateKey(self.x0) or self.getrhs(self.x0) != self.getg(self.x0) :
+        while self.OPEN.top_key() < self.CalculateKey(self.x0) or self.getrhs(self.x0) != self.getg(self.x0):
             kold = self.OPEN.top_key()
             u = self.OPEN.get()
             self.V.add(u)
             self.CLOSED.add(u)
-            if not self.done: # first time running, we need to stop on this condition
-                if getDist(self.x0,u) < 1*self.env.resolution:
-                    self.x0 = u
-                    break
+            if not self.done and getDist(self.x0, u) < 1 * self.env.resolution:
+                self.x0 = u
+                break
             if kold < self.CalculateKey(u):
                 self.OPEN.put(u, self.CalculateKey(u))
             if self.getg(u) > self.getrhs(u):
@@ -177,7 +182,7 @@ class D_star_Lite(object):
                 for u in CHANGED:
                     self.UpdateVertex(u)
                 self.ComputeShortestPath()
-                
+
                 ischanged = False
             self.Path = self.path(self.x0)
             visualization(self)
@@ -192,10 +197,7 @@ class D_star_Lite(object):
         until x_goal is reached (ties can be broken arbitrarily).'''
         path = []
         s_goal = self.xt
-        if not s_start:
-            s = self.x0
-        else:
-            s= s_start
+        s = s_start or self.x0
         ind = 0
         while s != s_goal:
             if s == self.x0:
@@ -211,9 +213,9 @@ class D_star_Lite(object):
         return path
 
 if __name__ == '__main__':
-    
+
     D_lite = D_star_Lite(1)
     a = time.time()
     D_lite.main()
-    print('used time (s) is ' + str(time.time() - a))
+    print(f'used time (s) is {str(time.time() - a)}')
             

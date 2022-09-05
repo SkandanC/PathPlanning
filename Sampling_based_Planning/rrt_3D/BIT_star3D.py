@@ -13,6 +13,7 @@ source: Gammell, Jonathan D., Timothy D. Barfoot, and Siddhartha S. Srinivasa.
         The International Journal of Robotics Research 39.5 (2020): 543-567.
 """
 
+
 import numpy as np
 import matplotlib.pyplot as plt
 from numpy.matlib import repmat
@@ -23,7 +24,10 @@ import copy
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Sampling_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Sampling_based_Planning/"
+)
+
 from rrt_3D.env3D import env
 from rrt_3D.utils3D import getDist, sampleFree, nearest, steer, isCollide, isinside, isinbound
 from rrt_3D.plot_util3D import set_axes_equal, draw_block_list, draw_Spheres, draw_obb, draw_line, make_transparent
@@ -54,7 +58,7 @@ class BIT_star:
         self.xstart, self.xgoal = tuple(self.env.start), tuple(self.env.goal)
         self.x0, self.xt = tuple(self.env.start), tuple(self.env.goal)
         self.maxiter = 1000 # used for determining how many batches needed
-        
+
         # radius calc parameter:
         # larger value makes better 1-time-performance, but longer time trade off
         self.eta = 7 # bigger or equal to 1
@@ -62,7 +66,7 @@ class BIT_star:
         # sampling 
         self.m = 400 # number of samples for one time sample
         self.d = 3 # dimension we work with
-        
+
         # instance of the cost to come gT
         self.g = {self.xstart:0, self.xgoal:np.inf}
 
@@ -72,7 +76,7 @@ class BIT_star:
         # denote if the path is found 
         self.done = False
         self.Path = []
-        
+
         # for drawing the ellipse
         self.C = np.zeros([3,3])
         self.L = np.zeros([3,3])
@@ -92,15 +96,15 @@ class BIT_star:
         num_resample = 0
         while True:
             # for the first round
-            print('round '+str(self.ind))
+            print(f'round {str(self.ind)}')
             self.visualization()
             # print(len(self.V))
             if len(self.QE) == 0 and len(self.QV) == 0:
                 self.Prune(self.g_T(self.xgoal))
                 self.Xsamples = self.Sample(self.m, self.g_T(self.xgoal)) # sample function
                 self.Xsamples.add(self.xgoal) # adding goal into the sample
-                self.Vold = {v for v in self.V}
-                self.QV = {v for v in self.V}
+                self.Vold = set(self.V)
+                self.QV = set(self.V)
                 # setting the radius 
                 if self.done:
                     self.r = 2 # sometimes the original radius criteria makes the radius too small to improve existing tree
@@ -113,25 +117,25 @@ class BIT_star:
             self.QE.remove((vm, xm))
             if self.g_T(vm) + self.c_hat(vm, xm) + self.h_hat(xm) < self.g_T(self.xgoal):
                 cost = self.c(vm, xm)
-                if self.g_hat(vm) + cost + self.h_hat(xm) < self.g_T(self.xgoal):
-                    if self.g_T(vm) + cost < self.g_T(xm):
-                        if xm in self.V:
-                            self.E.difference_update({(v, x) for (v, x) in self.E if x == xm})
-                        else:
-                            self.Xsamples.remove(xm)
-                            self.V.add(xm)
-                            self.QV.add(xm)
-                        self.g[xm] = self.g[vm] + cost
-                        self.E.add((vm, xm))
-                        self.Parent[xm] = vm # add parent or update parent
-                        self.QE.difference_update({(v, x) for (v, x) in self.QE if x == xm and (self.g_T(v) + self.c_hat(v, xm)) >= self.g_T(xm)})
-            
-            # reinitializing sampling
+                if self.g_hat(vm) + cost + self.h_hat(xm) < self.g_T(
+                    self.xgoal
+                ) and self.g_T(vm) + cost < self.g_T(xm):
+                    if xm in self.V:
+                        self.E.difference_update({(v, x) for (v, x) in self.E if x == xm})
+                    else:
+                        self.Xsamples.remove(xm)
+                        self.V.add(xm)
+                        self.QV.add(xm)
+                    self.g[xm] = self.g[vm] + cost
+                    self.E.add((vm, xm))
+                    self.Parent[xm] = vm # add parent or update parent
+                    self.QE.difference_update({(v, x) for (v, x) in self.QE if x == xm and (self.g_T(v) + self.c_hat(v, xm)) >= self.g_T(xm)})
+
             else:
                 self.QE = set()
                 self.QV = set()
             self.ind += 1
-            
+
             # if the goal is reached
             if self.xgoal in self.Parent:
                 print('locating path...')
@@ -143,7 +147,7 @@ class BIT_star:
                 break
 
         print('complete')
-        print('number of times resampling ' + str(num_resample))
+        print(f'number of times resampling {str(num_resample)}')
 
 # ---------IRRT utils
     def Sample(self, m, cmax, bias = 0.05, xrand = set()):
@@ -170,7 +174,7 @@ class BIT_star:
             if len(x2) < m:
                 return self.Sample(m - len(x2), cmax, bias=bias, xrand=xrand)
         else:
-            for i in range(m):
+            for _ in range(m):
                 xrand.add(tuple(sampleFree(self, bias = bias)))
         return xrand
 
@@ -192,8 +196,7 @@ class BIT_star:
         a1 = (xgoal - xstart) / d
         M = np.outer(a1,[1,0,0])
         U, S, V = np.linalg.svd(M)
-        C = U@np.diag([1, 1, np.linalg.det(U)*np.linalg.det(V)])@V.T
-        return C
+        return U@np.diag([1, 1, np.linalg.det(U)*np.linalg.det(V)])@V.T
 
 #----------BIT_star particular
     def ExpandVertex(self, v):
@@ -243,7 +246,7 @@ class BIT_star:
         if mode == 'QE':
             V = {state: self.g_T(state[0]) + self.c_hat(state[0], state[1]) + self.h_hat(state[1]) for state in self.QE}
         if len(V) == 0:
-            print(mode + 'empty')
+            print(f'{mode}empty')
             return None
         return min(V, key = V.get)
 
@@ -254,9 +257,7 @@ class BIT_star:
             V = {self.g_T(state) + self.h_hat(state) for state in self.QV}
         if mode == 'QE':
             V = {self.g_T(state[0]) + self.c_hat(state[0], state[1]) + self.h_hat(state[1]) for state in self.QE}
-        if len(V) == 0:
-            return np.inf
-        return min(V)
+        return np.inf if len(V) == 0 else min(V)
 
     def g_hat(self, v):
         return getDist(self.xstart, v)
@@ -271,10 +272,7 @@ class BIT_star:
     def c(self, v, w):
         # admissible estimate of the cost of an edge between state v, w
         collide, dist = isCollide(self, v, w)
-        if collide:
-            return np.inf
-        else: 
-            return dist
+        return np.inf if collide else dist
 
     def c_hat(self, v, w):
         # c_hat < c < np.inf
@@ -301,51 +299,60 @@ class BIT_star:
         return path
          
     def visualization(self):
-        if self.ind % 20 == 0:
-            V = np.array(list(self.V))
-            Xsample = np.array(list(self.Xsamples))
-            edges = list(map(list, self.E))
-            Path = np.array(self.Path)
-            start = self.env.start
-            goal = self.env.goal
-            # edges = E.get_edge()
-            #----------- list structure
-            # edges = []
-            # for i in self.Parent:
-            #     edges.append([i,self.Parent[i]])
-            #----------- end
-            # generate axis objects
-            ax = plt.subplot(111, projection='3d')
-            
-            # ax.view_init(elev=0.+ 0.03*self.ind/(2*np.pi), azim=90 + 0.03*self.ind/(2*np.pi))
-            # ax.view_init(elev=0., azim=90.)
-            ax.view_init(elev=90., azim=60.)
-            # ax.view_init(elev=-8., azim=180)
-            ax.clear()
-            # drawing objects
-            draw_Spheres(ax, self.env.balls)
-            draw_block_list(ax, self.env.blocks)
-            if self.env.OBB is not None:
-                draw_obb(ax, self.env.OBB)
-            draw_block_list(ax, np.array([self.env.boundary]), alpha=0)
-            draw_line(ax, edges, visibility=0.75, color='g')
-            draw_line(ax, Path, color='r')
-            if self.show_ellipse:
-                draw_ellipsoid(ax, self.C, self.L, self.xcenter) # beware, depending on start and goal position, this might be bad for vis
-            if len(V) > 0:
-                ax.scatter3D(V[:, 0], V[:, 1], V[:, 2], s=2, color='g', )
-            if len(Xsample) > 0: # plot the sampled points
-                ax.scatter3D(Xsample[:, 0], Xsample[:, 1], Xsample[:, 2], s=1, color='b',)
-            ax.plot(start[0:1], start[1:2], start[2:], 'go', markersize=7, markeredgecolor='k')
-            ax.plot(goal[0:1], goal[1:2], goal[2:], 'ro', markersize=7, markeredgecolor='k')
-            # adjust the aspect ratio
-            ax.dist = 11
-            set_axes_equal(ax)
-            make_transparent(ax)
-            #plt.xlabel('s')
-            #plt.ylabel('y')
-            ax.set_axis_off()
-            plt.pause(0.0001)
+        if self.ind % 20 != 0:
+            return
+        V = np.array(list(self.V))
+        Xsample = np.array(list(self.Xsamples))
+        edges = list(map(list, self.E))
+        Path = np.array(self.Path)
+        start = self.env.start
+        goal = self.env.goal
+        # edges = E.get_edge()
+        #----------- list structure
+        # edges = []
+        # for i in self.Parent:
+        #     edges.append([i,self.Parent[i]])
+        #----------- end
+        # generate axis objects
+        ax = plt.subplot(111, projection='3d')
+
+        # ax.view_init(elev=0.+ 0.03*self.ind/(2*np.pi), azim=90 + 0.03*self.ind/(2*np.pi))
+        # ax.view_init(elev=0., azim=90.)
+        ax.view_init(elev=90., azim=60.)
+        # ax.view_init(elev=-8., azim=180)
+        ax.clear()
+        # drawing objects
+        draw_Spheres(ax, self.env.balls)
+        draw_block_list(ax, self.env.blocks)
+        if self.env.OBB is not None:
+            draw_obb(ax, self.env.OBB)
+        draw_block_list(ax, np.array([self.env.boundary]), alpha=0)
+        draw_line(ax, edges, visibility=0.75, color='g')
+        draw_line(ax, Path, color='r')
+        if self.show_ellipse:
+            draw_ellipsoid(ax, self.C, self.L, self.xcenter) # beware, depending on start and goal position, this might be bad for vis
+        if len(V) > 0:
+            ax.scatter3D(V[:, 0], V[:, 1], V[:, 2], s=2, color='g', )
+        if len(Xsample) > 0: # plot the sampled points
+            ax.scatter3D(Xsample[:, 0], Xsample[:, 1], Xsample[:, 2], s=1, color='b',)
+        ax.plot(
+            start[:1],
+            start[1:2],
+            start[2:],
+            'go',
+            markersize=7,
+            markeredgecolor='k',
+        )
+
+        ax.plot(goal[:1], goal[1:2], goal[2:], 'ro', markersize=7, markeredgecolor='k')
+        # adjust the aspect ratio
+        ax.dist = 11
+        set_axes_equal(ax)
+        make_transparent(ax)
+        #plt.xlabel('s')
+        #plt.ylabel('y')
+        ax.set_axis_off()
+        plt.pause(0.0001)
 
 
 if __name__ == '__main__':

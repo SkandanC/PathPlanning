@@ -6,7 +6,10 @@ from collections import deque
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Sampling_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Sampling_based_Planning/"
+)
+
 from rrt_3D.plot_util3D import visualization
 
 
@@ -16,10 +19,7 @@ def getRay(x, y):
 
 
 def getAABB(blocks):
-    AABB = []
-    for i in blocks:
-        AABB.append(np.array([np.add(i[0:3], -0), np.add(i[3:6], 0)]))  # make AABBs alittle bit of larger
-    return AABB
+    return [np.array([np.add(i[:3], -0), np.add(i[3:6], 0)]) for i in blocks]
 
 
 def getDist(pos1, pos2):
@@ -40,16 +40,15 @@ def getDist(pos1, pos2):
 
 def sampleFree(initparams, bias = 0.1):
     '''biased sampling'''
-    x = np.random.uniform(initparams.env.boundary[0:3], initparams.env.boundary[3:6])
+    x = np.random.uniform(
+        initparams.env.boundary[:3], initparams.env.boundary[3:6]
+    )
+
     i = np.random.random()
     if isinside(initparams, x):
         return sampleFree(initparams)
     else:
-        if i < bias:
-            return np.array(initparams.xt) + 1
-        else:
-            return x
-        return x
+        return np.array(initparams.xt) + 1 if i < bias else x
 
 # ---------------------- Collision checking algorithms
 def isinside(initparams, x):
@@ -60,21 +59,17 @@ def isinside(initparams, x):
     for i in initparams.env.OBB:
         if isinbound(i, x, mode = 'obb'):
             return True
-    for i in initparams.env.balls:
-        if isinball(i, x):
-            return True
-    return False
+    return any(isinball(i, x) for i in initparams.env.balls)
 
 def isinbound(i, x, mode = False, factor = 0, isarray = False):
     if mode == 'obb':
         return isinobb(i, x, isarray)
-    if isarray:
-        compx = (i[0] - factor <= x[:,0]) & (x[:,0] < i[3] + factor) 
-        compy = (i[1] - factor <= x[:,1]) & (x[:,1] < i[4] + factor) 
-        compz = (i[2] - factor <= x[:,2]) & (x[:,2] < i[5] + factor) 
-        return compx & compy & compz
-    else:    
+    if not isarray:
         return i[0] - factor <= x[0] < i[3] + factor and i[1] - factor <= x[1] < i[4] + factor and i[2] - factor <= x[2] < i[5]
+    compx = (i[0] - factor <= x[:,0]) & (x[:,0] < i[3] + factor)
+    compy = (i[1] - factor <= x[:,1]) & (x[:,1] < i[4] + factor)
+    compz = (i[2] - factor <= x[:,2]) & (x[:,2] < i[5] + factor)
+    return compx & compy & compz
 
 def isinobb(i, x, isarray = False):
     # transform the point from {W} to {body}
@@ -88,13 +83,11 @@ def isinobb(i, x, isarray = False):
         return isinbound(block, pt)
 
 def isinball(i, x, factor = 0):
-    if getDist(i[0:3], x) <= i[3] + factor:
-        return True
-    return False
+    return getDist(i[:3], x) <= i[3] + factor
 
 def lineSphere(p0, p1, ball):
     # https://cseweb.ucsd.edu/classes/sp19/cse291-d/Files/CSE291_13_CollisionDetection.pdf
-    c, r = ball[0:3], ball[-1]
+    c, r = ball[:3], ball[-1]
     line = [p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2]]
     d1 = [c[0] - p0[0], c[1] - p0[1], c[2] - p0[2]]
     t = (1 / (line[0] * line[0] + line[1] * line[1] + line[2] * line[2])) * (
@@ -104,7 +97,7 @@ def lineSphere(p0, p1, ball):
     elif t >= 1:
         d2 = [c[0] - p1[0], c[1] - p1[1], c[2] - p1[2]]
         if (d2[0] * d2[0] + d2[1] * d2[1] + d2[2] * d2[2]) <= r ** 2: return True
-    elif 0 < t < 1:
+    else:
         x = [p0[0] + t * line[0], p0[1] + t * line[1], p0[2] + t * line[2]]
         k = [c[0] - x[0], c[1] - x[1], c[2] - x[2]]
         if (k[0] * k[0] + k[1] * k[1] + k[2] * k[2]) <= r ** 2: return True
@@ -129,9 +122,7 @@ def lineAABB(p0, p1, dist, aabb):
     if abs(T[2] * I[0] - T[0] * I[2]) > r: return False
     # I.cross(z axis) ?
     r = aabb.E[0] * abs(I[1]) + aabb.E[1] * abs(I[0])
-    if abs(T[0] * I[1] - T[1] * I[0]) > r: return False
-
-    return True
+    return abs(T[0] * I[1] - T[1] * I[0]) <= r
 
 def lineOBB(p0, p1, dist, obb):
     # transform points to obb frame
@@ -147,7 +138,7 @@ def lineOBB(p0, p1, dist, obb):
 def isCollide(initparams, x, child, dist=None):
     '''see if line intersects obstacle'''
     '''specified for expansion in A* 3D lookup table'''
-    if dist==None:
+    if dist is None:
         dist = getDist(x, child)
     # check in bound
     if not isinbound(initparams.env.boundary, child): 
@@ -200,10 +191,6 @@ def steer(initparams, x, y, DIST=False):
     step = min(dist, step)
     increment = ((y[0] - x[0]) / dist * step, (y[1] - x[1]) / dist * step, (y[2] - x[2]) / dist * step)
     xnew = (x[0] + increment[0], x[1] + increment[1], x[2] + increment[2])
-    # direc = (y - s) / np.linalg.norm(y - s)
-    # xnew = s + initparams.stepsize * direc
-    if DIST:
-        return xnew, dist
     return xnew, dist
 
 def cost(initparams, x):
@@ -233,11 +220,9 @@ class edgeset(object):
 
     def add_edge(self, edge):
         x, y = edge[0], edge[1]
-        if x in self.E:
-            self.E[x].add(y)
-        else:
+        if x not in self.E:
             self.E[x] = set()
-            self.E[x].add(y)
+        self.E[x].add(y)
 
     def remove_edge(self, edge):
         x, y = edge[0], edge[1]
@@ -247,13 +232,10 @@ class edgeset(object):
         edges = []
         if nodes is None:
             for v in self.E:
-                for n in self.E[v]:
-                    # if (n,v) not in edges:
-                    edges.append((v, n))
+                edges.extend((v, n) for n in self.E[v])
         else: 
             for v in nodes:
-                for n in self.E[tuple(v)]:
-                    edges.append((v, n))
+                edges.extend((v, n) for n in self.E[tuple(v)])
         return edges
 
     def isEndNode(self, node):
@@ -277,22 +259,19 @@ def tree_add_edge(node_in_tree, x):
 def tree_bfs(head, x):
     # searches s in order of bfs
     node = head
-    Q = []
-    Q.append(node)
+    Q = [node]
     while Q:
         curr = Q.pop()
         if curr.pos == x:
             return curr
-        for child_node in curr.child:
-            Q.append(child_node)
+        Q.extend(iter(curr.child))
 
 def tree_nearest(head, x):
     # find the node nearest to s
     D = np.inf
     min_node = None
 
-    Q = []
-    Q.append(head)
+    Q = [head]
     while Q:
         curr = Q.pop()
         dist = getDist(curr.pos, x)
@@ -300,32 +279,26 @@ def tree_nearest(head, x):
         if dist < D:
             D, min_node = dist, curr
         # bfs
-        for child_node in curr.child:
-            Q.append(child_node)
+        Q.extend(iter(curr.child))
     return min_node
 
 def tree_steer(initparams, node, x):
     # steer from node to s
     dist, step = getDist(node.pos, x), initparams.stepsize
     increment = ((node.pos[0] - x[0]) / dist * step, (node.pos[1] - x[1]) / dist * step, (node.pos[2] - x[2]) / dist * step)
-    xnew = (x[0] + increment[0], x[1] + increment[1], x[2] + increment[2])
-    return xnew
+    return x[0] + increment[0], x[1] + increment[1], x[2] + increment[2]
 
 def tree_print(head):
-    Q = []
-    Q.append(head)
+    Q = [head]
     verts = []
     edge = []
     while Q:
         curr = Q.pop()
        # print(curr.pos)
         verts.append(curr.pos)
-        if curr.Parent == None:
-            pass
-        else:
+        if curr.Parent != None:
             edge.append([curr.pos, curr.Parent.pos])
-        for child in curr.child:
-            Q.append(child)
+        Q.extend(iter(curr.child))
     return verts, edge
 
 def tree_path(initparams, end_node):

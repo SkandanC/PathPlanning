@@ -5,7 +5,10 @@ import os
 import sys
 from collections import defaultdict
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Search_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Search_based_Planning/"
+)
+
 from Search_3D.env3D import env
 from Search_3D import Astar3D
 from Search_3D.utils3D import StateSpace, getDist, getNearest, getRay, isinbound, isinball, isCollide, children, cost, \
@@ -49,9 +52,7 @@ class D_star(object):
     def get_kmin(self):
         # get the minimum of the k val in OPEN
         # -1 if it does not exist
-        if self.OPEN:
-            return min(self.OPEN.values())
-        return -1
+        return min(self.OPEN.values()) if self.OPEN else -1
 
     def min_state(self):
         # returns the state in OPEN with min k(.)
@@ -99,31 +100,26 @@ class D_star(object):
                 self.checkState(y)
                 bb = self.h[x] + cost(self, x, y)
                 if self.tag[y] == 'New' or \
-                        (self.b[y] == x and self.h[y] != bb) or \
-                        (self.b[y] != x and self.h[y] > bb):
+                            (self.b[y] == x and self.h[y] != bb) or \
+                            (self.b[y] != x and self.h[y] > bb):
                     self.b[y] = x
                     self.insert(y, bb)
         else:
             for y in children(self, x):
-                 # check y
+             # check y
                 self.checkState(y)
                 bb = self.h[x] + cost(self, x, y)
                 if self.tag[y] == 'New' or \
-                        (self.b[y] == x and self.h[y] != bb):
+                            (self.b[y] == x and self.h[y] != bb):
                     self.b[y] = x
                     self.insert(y, bb)
-                else:
-                    if self.b[y] != x and self.h[y] > bb:
-                        self.insert(x, self.h[x])
-                    else:
-                        if self.b[y] != x and self.h[y] > bb and \
-                                self.tag[y] == 'Closed' and self.h[y] == kold:
-                            self.insert(y, self.h[y])
+                elif self.b[y] != x and self.h[y] > bb:
+                    self.insert(x, self.h[x])
         return self.get_kmin()
 
     def modify_cost(self, x):
-        xparent = self.b[x]
         if self.tag[x] == 'Closed':
+            xparent = self.b[x]
             self.insert(x, self.h[xparent] + cost(self, x, xparent))
 
     def modify(self, x):
@@ -136,10 +132,7 @@ class D_star(object):
 
     def path(self, goal=None):
         path = []
-        if not goal:
-            x = self.x0
-        else:
-            x = goal
+        x = goal or self.x0
         start = self.xt
         while x != start:
             path.append([np.array(x), np.array(self.b[x])])
@@ -165,17 +158,14 @@ class D_star(object):
         # plt.show()
         # when the environemnt changes over time
 
-        for i in range(5):
+        for _ in range(5):
             self.env.move_block(a=[0, -0.50, 0], s=0.5, block_to_move=1, mode='translation')
             self.env.move_block(a=[-0.25, 0, 0], s=0.5, block_to_move=0, mode='translation')
             # travel from end to start
             s = tuple(self.env.start)
             # self.V = set()
             while s != self.xt:
-                if s == tuple(self.env.start):
-                    sparent = self.b[self.x0]
-                else:
-                    sparent = self.b[s]
+                sparent = self.b[self.x0] if s == tuple(self.env.start) else self.b[s]
                 # if there is a change of Cost, or a collision.
                 if cost(self, s, sparent) == np.inf:
                     self.modify(s)

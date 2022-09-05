@@ -95,7 +95,7 @@ class FMT:
 
         # node_end = self.ChooseGoalPoint()
         path_x, path_y = self.ExtractPath()
-        self.animation(path_x, path_y, Visited[1: len(Visited)])
+        self.animation(path_x, path_y, Visited[1:])
 
     def ChooseGoalPoint(self):
         Near = self.Near(self.V, self.x_goal, 2.0)
@@ -143,9 +143,8 @@ class FMT:
                          random.uniform(self.y_range[0] + delta, self.y_range[1] - delta)))
             if self.utils.is_inside_obs(node):
                 continue
-            else:
-                Sample.add(node)
-                ind += 1
+            Sample.add(node)
+            ind += 1
 
         return Sample
 
@@ -155,9 +154,7 @@ class FMT:
         for node in self.V:
             plt.plot(node.x, node.y, marker='.', color='lightgrey', markersize=3)
 
-        count = 0
-        for node in visited:
-            count += 1
+        for count, node in enumerate(visited, start=1):
             plt.plot([node.x, node.parent.x], [node.y, node.parent.y], '-g')
             plt.gcf().canvas.mpl_connect(
                 'key_release_event',

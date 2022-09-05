@@ -3,6 +3,7 @@
 This is rrt extend code for 3D
 @author: yue qi
 """
+
 import numpy as np
 from numpy.matlib import repmat
 from collections import defaultdict
@@ -12,7 +13,10 @@ import matplotlib.pyplot as plt
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/../../Sampling_based_Planning/")
+sys.path.append(
+    f"{os.path.dirname(os.path.abspath(__file__))}/../../Sampling_based_Planning/"
+)
+
 from rrt_3D.env3D import env
 from rrt_3D.utils3D import getDist, sampleFree, nearest, steer, isCollide, near, visualization, cost, path
 
@@ -78,18 +82,13 @@ class extend_rrt(object):
         self.Parent[extended] = nearest
 
     def RandomState(self):
-        # generate a random, obstacle free state
-        xrand = sampleFree(self, bias=0)
-        return xrand
+        return sampleFree(self, bias=0)
 
     #--------- insight to the rrt_extend
     def ChooseTarget(self, state):
         # return the goal, or randomly choose a state in the waypoints based on probs
         p = np.random.uniform()
-        if len(self.V) == 1:
-            i = 0
-        else:
-            i = np.random.randint(0, high = len(self.V) - 1)
+        i = 0 if len(self.V) == 1 else np.random.randint(0, high = len(self.V) - 1)
         if 0 < p < self.GoalProb:
             return self.xt
         elif self.GoalProb < p < self.GoalProb + self.WayPointProb:
